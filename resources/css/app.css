@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+
+/* Self-hosted Inter (via @fontsource/inter), Latin subset only — no runtime
+   Google Fonts dependency, since the shop's internet connection can't be
+   assumed, and no need for Cyrillic/Greek weight the full import pulls in. */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+@import '@fontsource/inter/latin-800.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/blade-ui-kit/blade-heroicons/resources/**/*.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Primary — deep agricultural green. Anchors the sidebar and primary
+       actions. Deliberately more forest/olive than a generic SaaS emerald. */
+    --color-primary-50: #f1f8f2;
+    --color-primary-100: #dcf0e1;
+    --color-primary-200: #badfc4;
+    --color-primary-300: #8ac79a;
+    --color-primary-400: #5cad73;
+    --color-primary-500: #3a9358;
+    --color-primary-600: #2d7a48;
+    --color-primary-700: #24613b;
+    --color-primary-800: #1b4a2e;
+    --color-primary-900: #123321;
+    --color-primary-950: #0b1f12;
+
+    /* Surface — warm off-white, not cold gray. */
+    --color-surface: #faf8f4;
+    --color-surface-card: #ffffff;
+    --color-surface-muted: #f3efe7;
+    --color-surface-border: #e7e1d5;
+
+    /* Text — warm dark, not pure black/gray. */
+    --color-text-primary: #1f2318;
+    --color-text-secondary: #5b6355;
+    --color-text-muted: #8b8f80;
+
+    /* Semantic accents. Amber = warning (expiring/low stock), red = danger
+       (expired/overdue/destructive), blue = informational, success reuses
+       the primary green family but named separately for clarity in views. */
+    --color-warn-50: #fffbeb;
+    --color-warn-100: #fef3c7;
+    --color-warn-600: #d97706;
+    --color-warn-700: #b45309;
+
+    --color-danger-50: #fef2f2;
+    --color-danger-100: #fee2e2;
+    --color-danger-600: #dc2626;
+    --color-danger-700: #b91c1c;
+
+    --color-info-50: #eff6ff;
+    --color-info-100: #dbeafe;
+    --color-info-600: #2563eb;
+    --color-info-700: #1d4ed8;
+
+    --color-success-50: #f1f8f2;
+    --color-success-100: #dcf0e1;
+    --color-success-600: #2d7a48;
+    --color-success-700: #1b4a2e;
+
+    --radius-card: 0.875rem;
+}
+
+body {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+}
+
+/* Tabular figures wherever money/quantities appear in tables so columns
+   align — applied via the `.font-tabular` utility class in views. */
+.font-tabular {
+    font-variant-numeric: tabular-nums;
+}
