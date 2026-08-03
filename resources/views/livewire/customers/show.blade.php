@@ -1,40 +1,57 @@
 <div>
     <div class="mb-6 flex items-center justify-between print:hidden">
         <div>
-            <a href="{{ route('customers.index') }}" class="text-sm text-slate-500 hover:underline">&larr; Customers</a>
-            <h1 class="mt-1 text-2xl font-semibold text-slate-900">{{ $customer->name }}</h1>
-            <p class="text-sm text-slate-500">{{ $customer->phone }}</p>
+            <a href="{{ route('customers.index') }}" class="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-secondary">
+                <x-heroicon-o-arrow-left class="h-3.5 w-3.5" />
+                Customers
+            </a>
+            <h1 class="mt-1 text-2xl font-semibold text-text-primary">{{ $customer->name }}</h1>
+            <p class="text-sm text-text-muted">{{ $customer->phone }}</p>
         </div>
         <div class="flex gap-3">
-            <button onclick="window.print()" class="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+            <x-button variant="secondary" onclick="window.print()">
+                <x-heroicon-o-printer class="h-4 w-4" />
                 Print statement
-            </button>
-            <button wire:click="startPayment" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+            </x-button>
+            <x-button variant="primary" wire:click="startPayment">
+                <x-heroicon-o-banknotes class="h-4 w-4" />
                 Record payment
-            </button>
+            </x-button>
         </div>
     </div>
 
     <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4 print:hidden">
-        <div class="rounded-lg border border-slate-200 bg-white p-4">
-            <p class="text-sm text-slate-500">Balance</p>
-            <p class="mt-1 text-lg font-semibold {{ $customer->balance_cents > 0 ? 'text-red-600' : 'text-slate-900' }}">
-                KES {{ number_format($customer->balance_cents / 100, 2) }}
-            </p>
-        </div>
-        <div class="rounded-lg border border-slate-200 bg-white p-4">
-            <p class="text-sm text-slate-500">Credit limit</p>
-            <p class="mt-1 text-lg font-semibold text-slate-900">
-                {{ $customer->hasCreditLimit() ? 'KES '.number_format($customer->credit_limit_cents / 100, 2) : 'No limit' }}
-            </p>
-        </div>
-        <div class="rounded-lg border border-slate-200 bg-white p-4 sm:col-span-2">
-            <p class="mb-1 text-sm text-slate-500">Aging</p>
-            <div class="flex gap-3 text-xs">
-                <span>Current: KES {{ number_format($aging['current'] / 100, 2) }}</span>
-                <span>30d: KES {{ number_format($aging['days_30'] / 100, 2) }}</span>
-                <span>60d: KES {{ number_format($aging['days_60'] / 100, 2) }}</span>
-                <span class="{{ $aging['days_90_plus'] > 0 ? 'font-medium text-red-600' : '' }}">90d+: KES {{ number_format($aging['days_90_plus'] / 100, 2) }}</span>
+        <x-stat-card
+            icon="credit-card"
+            :variant="$customer->balance_cents > 0 ? 'danger' : 'success'"
+            label="Balance"
+            :value="'KES '.number_format($customer->balance_cents / 100, 2)"
+        />
+        <x-stat-card
+            icon="shield-check"
+            variant="info"
+            label="Credit limit"
+            :value="$customer->hasCreditLimit() ? 'KES '.number_format($customer->credit_limit_cents / 100, 2) : 'No limit'"
+        />
+        <div class="rounded-card border border-surface-border bg-surface-card p-5 shadow-sm sm:col-span-2">
+            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">Debt aging</p>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-4">
+                <div>
+                    <p class="text-xs text-text-muted">Current</p>
+                    <p class="font-tabular text-sm font-semibold text-text-primary">KES {{ number_format($aging['current'] / 100, 2) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-text-muted">30 days</p>
+                    <p class="font-tabular text-sm font-semibold text-warn-600">KES {{ number_format($aging['days_30'] / 100, 2) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-text-muted">60 days</p>
+                    <p class="font-tabular text-sm font-semibold text-orange-600">KES {{ number_format($aging['days_60'] / 100, 2) }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-text-muted">90+ days</p>
+                    <p class="font-tabular text-sm font-semibold {{ $aging['days_90_plus'] > 0 ? 'text-danger-600' : 'text-text-muted' }}">KES {{ number_format($aging['days_90_plus'] / 100, 2) }}</p>
+                </div>
             </div>
         </div>
     </div>
@@ -48,79 +65,81 @@
             <div>Balance: KES {{ number_format($customer->balance_cents / 100, 2) }}</div>
         </div>
 
-        <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white print:border-0">
-            <table class="w-full text-sm">
-                <thead class="border-b border-slate-200 bg-slate-50 text-left text-slate-500 print:bg-transparent">
-                    <tr>
-                        <th class="px-4 py-2">Date</th>
-                        <th class="px-4 py-2">Type</th>
-                        <th class="px-4 py-2">Reference</th>
-                        <th class="px-4 py-2 text-right">Amount</th>
-                        <th class="px-4 py-2 text-right">Balance</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse ($ledgerEntries as $entry)
-                        <tr>
-                            <td class="px-4 py-2 text-slate-500">{{ $entry->created_at->format('d M Y H:i') }}</td>
-                            <td class="px-4 py-2 capitalize text-slate-700">{{ $entry->type }}</td>
-                            <td class="px-4 py-2 text-slate-500">
-                                {{ $entry->sale?->sale_number ?? $entry->notes ?? '—' }}
-                            </td>
-                            <td class="px-4 py-2 text-right {{ $entry->type === 'charge' ? 'text-red-600' : 'text-emerald-700' }}">
+        <x-table class="print:border-0 print:shadow-none">
+            <thead>
+                <tr>
+                    <x-table.th>Date</x-table.th>
+                    <x-table.th>Type</x-table.th>
+                    <x-table.th>Reference</x-table.th>
+                    <x-table.th align="right">Amount</x-table.th>
+                    <x-table.th align="right">Balance</x-table.th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($ledgerEntries as $entry)
+                    <tr class="hover:bg-surface-muted/50">
+                        <x-table.td>
+                            <span class="text-text-muted">{{ $entry->created_at->format('d M Y H:i') }}</span>
+                        </x-table.td>
+                        <x-table.td>
+                            <span class="capitalize text-text-primary">{{ $entry->type }}</span>
+                        </x-table.td>
+                        <x-table.td>
+                            <span class="text-text-muted">{{ $entry->sale?->sale_number ?? $entry->notes ?? '—' }}</span>
+                        </x-table.td>
+                        <x-table.td align="right">
+                            <span class="font-tabular font-medium {{ $entry->type === 'charge' ? 'text-danger-600' : 'text-success-600' }}">
                                 {{ $entry->type === 'charge' ? '+' : '-' }}KES {{ number_format($entry->amount_cents / 100, 2) }}
-                            </td>
-                            <td class="px-4 py-2 text-right text-slate-700">KES {{ number_format($entry->running_balance_cents / 100, 2) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-slate-400">No ledger history yet.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                            </span>
+                        </x-table.td>
+                        <x-table.td align="right">
+                            <span class="font-tabular text-text-primary">KES {{ number_format($entry->running_balance_cents / 100, 2) }}</span>
+                        </x-table.td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5">
+                            <x-empty-state icon="document-text" title="No ledger history yet" description="Transactions will appear here once credit sales or payments are recorded." />
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </x-table>
     </div>
 
     @if ($showPaymentForm)
-        <div class="fixed inset-0 z-10 flex items-center justify-center bg-slate-900/40 px-4 print:hidden" wire:click.self="$set('showPaymentForm', false)">
-            <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-                <h2 class="mb-4 text-lg font-semibold">Record payment from {{ $customer->name }}</h2>
-                <form wire:submit="recordPayment" class="space-y-4">
+        <x-modal title="Record payment from {{ $customer->name }}" wire:click.self="$set('showPaymentForm', false)">
+            <form wire:submit="recordPayment" class="space-y-4">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-text-primary">Amount (KES)</label>
+                    <input type="number" step="0.01" wire:model="amount" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-700/30">
+                    @error('amount') <p class="mt-1 text-xs text-danger-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-text-primary">Method</label>
+                    <select wire:model.live="method" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-700/30">
+                        <option value="cash">Cash</option>
+                        <option value="mpesa">M-Pesa</option>
+                    </select>
+                </div>
+                @if ($method === 'mpesa')
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">Amount (KES)</label>
-                        <input type="number" step="0.01" wire:model="amount" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                        @error('amount') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        <label class="mb-1 block text-sm font-medium text-text-primary">M-Pesa transaction code</label>
+                        <input type="text" wire:model="mpesaCode" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-700/30">
+                        @error('mpesaCode') <p class="mt-1 text-xs text-danger-600">{{ $message }}</p> @enderror
                     </div>
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">Method</label>
-                        <select wire:model.live="method" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                            <option value="cash">Cash</option>
-                            <option value="mpesa">M-Pesa</option>
-                        </select>
-                    </div>
-                    @if ($method === 'mpesa')
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-slate-700">M-Pesa transaction code</label>
-                            <input type="text" wire:model="mpesaCode" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                            @error('mpesaCode') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-                    @endif
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">Notes (optional)</label>
-                        <input type="text" wire:model="notes" class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                    <div class="flex justify-end gap-3 pt-2">
-                        <button type="button" wire:click="$set('showPaymentForm', false)" class="rounded-md px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
-                            Cancel
-                        </button>
-                        <button type="submit" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
-                            Record payment
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                @endif
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-text-primary">Notes (optional)</label>
+                    <input type="text" wire:model="notes" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-700/30">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <x-button variant="ghost" type="button" wire:click="$set('showPaymentForm', false)">Cancel</x-button>
+                    <x-button variant="primary" type="submit">Record payment</x-button>
+                </div>
+            </form>
+        </x-modal>
     @endif
 
     <style>
