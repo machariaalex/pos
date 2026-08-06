@@ -4,6 +4,10 @@ services:
     env: docker
     plan: starter
     region: frankfurt
+    disk:
+      name: sqlite-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: APP_NAME
         value: "Waingo Farm Agrovet"
@@ -16,27 +20,9 @@ services:
       - key: APP_URL
         value: https://waingo-farm-pos.onrender.com
       - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_HOST
-        fromDatabase:
-          name: waingo-pos-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: waingo-pos-db
-          property: port
+        value: sqlite
       - key: DB_DATABASE
-        fromDatabase:
-          name: waingo-pos-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: waingo-pos-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: waingo-pos-db
-          property: password
+        value: /var/data/database.sqlite
       - key: LOG_CHANNEL
         value: stack
       - key: LOG_LEVEL
@@ -47,7 +33,3 @@ services:
         value: database
       - key: QUEUE_CONNECTION
         value: database
-
-databases:
-  - name: waingo-pos-db
-    region: frankfurt

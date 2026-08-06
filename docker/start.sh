@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+# Ensure SQLite database file exists on the persistent disk
+if [ ! -f "${DB_DATABASE}" ]; then
+    echo "Creating SQLite database at ${DB_DATABASE}..."
+    touch "${DB_DATABASE}"
+fi
+
 echo "Running migrations..."
 php artisan migrate --force
 
