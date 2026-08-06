@@ -27,6 +27,7 @@ class BackupDatabase extends Command
             $path = match ($driver) {
                 'sqlite' => $this->backupSqlite($connection, $backupDir, $timestamp),
                 'mysql' => $this->backupMysql($connection, $backupDir, $timestamp),
+                'pgsql' => $this->backupPgsql($connection, $backupDir, $timestamp),
                 default => throw new RuntimeException("No backup strategy for database driver [{$driver}]."),
             };
         } catch (RuntimeException $e) {
@@ -78,6 +79,38 @@ class BackupDatabase extends Command
 
         if (! $process->isSuccessful()) {
             throw new RuntimeException('mysqldump failed: '.$process->getErrorOutput());
+        }
+
+        File::put($destination, $process->getOutput());
+
+        $gzipped = "{$destination}.gz";
+        File::put($gzipped, gzencode(File::get($destination)));
+        File::delete($destination);
+
+        return $gzipped;
+    }
+
+    private function backupPgsql(string $connection, string $backupDir, string $timestamp): string
+    {
+        $config = config("database.connections.{$connection}");
+        $destination = "{$backupDir}/agrovet-{$timestamp}.sql";
+
+        $process = new Process([
+            'pg_dump',
+            '--host='.$config['host'],
+            '--port='.($config['port'] ?? 5432),
+            '--username='.$config['username'],
+            '--no-password',
+            '--format=plain',
+            $config['database'],
+        ]);
+
+        $process->setEnv(['PGPASSWORD' => $config['password']]);
+        $process->setTimeout(300);
+        $process->run();
+
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException('pg_dump failed: '.$process->getErrorOutput());
         }
 
         File::put($destination, $process->getOutput());
