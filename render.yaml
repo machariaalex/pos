@@ -50,5 +50,4 @@ services:
 
 databases:
   - name: waingo-pos-db
-    plan: basic
     region: frankfurt
