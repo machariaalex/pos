@@ -57,6 +57,48 @@
                 </div>
 
                 <form wire:submit="receive" class="space-y-4">
+                    {{-- Supplier --}}
+                    <div>
+                        <div class="mb-1 flex items-center justify-between">
+                            <label class="block text-sm font-medium text-text-secondary">Supplier (optional)</label>
+                            <button type="button" wire:click="$toggle('showSupplierForm')" class="text-xs font-medium text-primary-700 hover:underline">
+                                {{ $showSupplierForm ? 'Cancel' : '+ New supplier' }}
+                            </button>
+                        </div>
+                        @if ($showSupplierForm)
+                            <div class="mb-2 space-y-2 rounded-lg border border-surface-border bg-surface-muted p-3">
+                                <input type="text" wire:model="newSupplierName" placeholder="Supplier name" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
+                                @error('newSupplierName') <p class="text-sm text-danger-600">{{ $message }}</p> @enderror
+                                <input type="text" wire:model="newSupplierPhone" placeholder="Phone (optional)" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
+                                <x-button type="button" wire:click="addSupplier" variant="secondary" size="md">Save supplier</x-button>
+                            </div>
+                        @endif
+                        @if ($selectedSupplier)
+                            <div class="flex items-center justify-between rounded-lg bg-surface-muted px-3 py-2 text-sm">
+                                <span class="font-medium text-text-primary">{{ $selectedSupplier->name }}
+                                    @if ($selectedSupplier->phone) <span class="font-normal text-text-muted">&middot; {{ $selectedSupplier->phone }}</span> @endif
+                                </span>
+                                <button type="button" wire:click="clearSupplier" class="p-1 text-text-muted hover:text-text-primary">
+                                    <x-heroicon-o-x-mark class="h-4 w-4" />
+                                </button>
+                            </div>
+                        @else
+                            <input type="text" wire:model.live.debounce.200ms="supplierSearch" placeholder="Search supplier by name..." class="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
+                            @if ($supplierSearch !== '')
+                                <div class="mt-1 max-h-40 overflow-y-auto rounded-lg border border-surface-border bg-surface-card shadow">
+                                    @forelse ($supplierResults as $supplier)
+                                        <button type="button" wire:click="selectSupplier({{ $supplier->id }})" class="block w-full border-b border-surface-border px-3 py-2.5 text-left text-sm last:border-0 hover:bg-surface-muted">
+                                            {{ $supplier->name }}
+                                            @if ($supplier->phone) <span class="text-xs text-text-muted">{{ $supplier->phone }}</span> @endif
+                                        </button>
+                                    @empty
+                                        <p class="px-3 py-2.5 text-sm text-text-muted">No matches. Use "+ New supplier" above.</p>
+                                    @endforelse
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+
                     <div>
                         <label class="mb-1 block text-sm font-medium text-text-secondary">Batch number (optional)</label>
                         <input type="text" wire:model="batchNumber" placeholder="Auto-generated if left blank" class="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
@@ -99,7 +141,10 @@
                 <div class="flex items-center justify-between gap-3 border-b border-surface-border px-4 py-3 text-sm last:border-0">
                     <div class="min-w-0">
                         <p class="truncate font-medium text-text-primary">{{ $batch->product->name }}</p>
-                        <p class="text-xs text-text-muted">{{ $batch->batch_number }} &middot; {{ $batch->received_at->toDateString() }}</p>
+                        <p class="text-xs text-text-muted">
+                            {{ $batch->batch_number }} &middot; {{ $batch->received_at->toDateString() }}
+                            @if ($batch->supplier) &middot; {{ $batch->supplier->name }} @endif
+                        </p>
                     </div>
                     <p class="font-tabular shrink-0 text-text-secondary">+{{ $batch->quantity_received }} {{ $batch->product->base_unit }}</p>
                 </div>

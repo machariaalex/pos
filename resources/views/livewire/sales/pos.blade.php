@@ -27,11 +27,15 @@
                             >
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-medium text-text-primary">{{ $product->name }}</p>
-                                    @if ($product->isLowStock())
-                                        <span class="mt-0.5 inline-flex items-center gap-1 text-xs text-warn-700">
-                                            <x-heroicon-o-exclamation-triangle class="h-3 w-3" /> Low stock
-                                        </span>
-                                    @endif
+                                    <span class="mt-0.5 inline-flex items-center gap-1 text-xs {{ $product->isLowStock() ? 'text-warn-700' : 'text-text-muted' }}">
+                                        @if ($product->isLowStock())
+                                            <x-heroicon-o-exclamation-triangle class="h-3 w-3" />
+                                        @endif
+                                        {{ $product->stockOnHand() }} {{ $product->base_unit }} in stock
+                                        @if ($product->selling_unit)
+                                            &middot; sell per {{ $product->selling_unit }}
+                                        @endif
+                                    </span>
                                 </div>
                                 <p class="font-tabular shrink-0 text-sm font-semibold text-primary-700">
                                     KES {{ number_format($product->selling_price_cents / 100, 2) }}
@@ -126,7 +130,7 @@
                 <div class="flex items-start justify-between gap-2 border-b border-surface-border py-3 last:border-0" wire:key="cart-line-{{ $lineId }}">
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-sm font-medium text-text-primary">{{ $line['name'] }}</p>
-                        <p class="font-tabular text-xs text-text-muted">KES {{ number_format($line['unit_price_cents'] / 100, 2) }} / {{ $line['base_unit'] }}</p>
+                        <p class="font-tabular text-xs text-text-muted">KES {{ number_format($line['unit_price_cents'] / 100, 2) }} / {{ $line['selling_unit'] ?? $line['base_unit'] }}</p>
 
                         <div
                             class="mt-2 flex items-center gap-1.5"

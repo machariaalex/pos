@@ -34,6 +34,12 @@ class Index extends Component
 
     public string $baseUnit = Product::UNIT_KG;
 
+    public bool $hasSellingUnit = false;
+
+    public string $sellingUnit = '';
+
+    public string $unitsPerBase = '1';
+
     public string $buyingPrice = '';
 
     public string $sellingPrice = '';
@@ -67,9 +73,10 @@ class Index extends Component
 
         $this->reset([
             'editingProductId', 'name', 'categoryId', 'barcode', 'buyingPrice', 'sellingPrice', 'reorderLevel',
-            'showCategoryForm', 'newCategoryName',
+            'showCategoryForm', 'newCategoryName', 'hasSellingUnit', 'sellingUnit', 'unitsPerBase',
         ]);
         $this->baseUnit = Product::UNIT_KG;
+        $this->unitsPerBase = '1';
         $this->isActive = true;
         $this->showForm = true;
     }
@@ -84,6 +91,9 @@ class Index extends Component
         $this->categoryId = $product->category_id;
         $this->barcode = (string) $product->barcode;
         $this->baseUnit = $product->base_unit;
+        $this->hasSellingUnit = $product->selling_unit !== null;
+        $this->sellingUnit = $product->selling_unit ?? '';
+        $this->unitsPerBase = $product->selling_unit ? (string) $product->units_per_base : '1';
         $this->buyingPrice = number_format($product->buying_price_cents / 100, 2, '.', '');
         $this->sellingPrice = number_format($product->selling_price_cents / 100, 2, '.', '');
         $this->reorderLevel = (string) $product->reorder_level;
@@ -120,6 +130,8 @@ class Index extends Component
             'categoryId' => ['required', 'exists:categories,id'],
             'barcode' => ['nullable', 'string', 'max:100', Rule::unique('products', 'barcode')->ignore($this->editingProductId)],
             'baseUnit' => ['required', Rule::in(Product::UNITS)],
+            'sellingUnit' => [$this->hasSellingUnit ? 'required' : 'nullable', Rule::in(Product::UNITS)],
+            'unitsPerBase' => [$this->hasSellingUnit ? 'required' : 'nullable', 'numeric', 'gt:0'],
             'buyingPrice' => [$canSeeBuyingPrice ? 'required' : 'nullable', 'numeric', 'min:0'],
             'sellingPrice' => ['required', 'numeric', 'min:0'],
             'reorderLevel' => ['required', 'numeric', 'min:0'],
@@ -130,6 +142,8 @@ class Index extends Component
             'name' => $data['name'],
             'barcode' => $this->barcode ?: null,
             'base_unit' => $data['baseUnit'],
+            'selling_unit' => $this->hasSellingUnit ? $data['sellingUnit'] : null,
+            'units_per_base' => $this->hasSellingUnit ? $data['unitsPerBase'] : 1,
             'selling_price_cents' => (int) round($data['sellingPrice'] * 100),
             'reorder_level' => $data['reorderLevel'],
             'is_active' => $this->isActive,

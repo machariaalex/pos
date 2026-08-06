@@ -5,6 +5,7 @@ namespace App\Livewire\Inventory\ReceiveStock;
 use App\Actions\Inventory\ReceiveBatch;
 use App\Models\Batch;
 use App\Models\Product;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -27,6 +28,16 @@ class Index extends Component
     public string $receivedAt = '';
 
     public ?string $lastReceivedMessage = null;
+
+    public ?int $supplierId = null;
+
+    public string $supplierSearch = '';
+
+    public bool $showSupplierForm = false;
+
+    public string $newSupplierName = '';
+
+    public string $newSupplierPhone = '';
 
     public function mount(): void
     {
@@ -57,7 +68,39 @@ class Index extends Component
 
     public function clearProduct(): void
     {
-        $this->reset(['productId', 'batchNumber', 'expiryDate', 'quantityReceived', 'buyingPrice', 'receivedAt']);
+        $this->reset(['productId', 'batchNumber', 'expiryDate', 'quantityReceived', 'buyingPrice', 'receivedAt',
+            'supplierId', 'supplierSearch', 'showSupplierForm', 'newSupplierName', 'newSupplierPhone']);
+    }
+
+    public function selectSupplier(int $supplierId): void
+    {
+        $this->supplierId = $supplierId;
+        $this->supplierSearch = '';
+    }
+
+    public function clearSupplier(): void
+    {
+        $this->supplierId = null;
+    }
+
+    public function addSupplier(): void
+    {
+        Gate::authorize('adjust-stock');
+
+        $data = $this->validate([
+            'newSupplierName' => ['required', 'string', 'max:255'],
+            'newSupplierPhone' => ['nullable', 'string', 'max:20'],
+        ]);
+
+        $supplier = Supplier::create([
+            'name' => $data['newSupplierName'],
+            'phone' => $this->newSupplierPhone ?: null,
+        ]);
+
+        $this->supplierId = $supplier->id;
+        $this->newSupplierName = '';
+        $this->newSupplierPhone = '';
+        $this->showSupplierForm = false;
     }
 
     public function receive(ReceiveBatch $action): void
@@ -86,6 +129,7 @@ class Index extends Component
             (int) round($data['buyingPrice'] * 100),
             $data['receivedAt'],
             auth()->user(),
+            $this->supplierId,
         );
 
         $this->lastReceivedMessage = "Received {$data['quantityReceived']} {$product->base_unit} of {$product->name}.";
@@ -101,7 +145,11 @@ class Index extends Component
                 })->orderBy('name')->limit(10)->get()
                 : collect(),
             'selectedProduct' => $this->productId ? Product::find($this->productId) : null,
-            'recentReceipts' => Batch::with('product')->latest('created_at')->limit(10)->get(),
+            'selectedSupplier' => $this->supplierId ? Supplier::find($this->supplierId) : null,
+            'supplierResults' => $this->supplierSearch !== ''
+                ? Supplier::where('name', 'like', "%{$this->supplierSearch}%")->orderBy('name')->limit(8)->get()
+                : collect(),
+            'recentReceipts' => Batch::with(['product', 'supplier'])->latest('created_at')->limit(10)->get(),
         ]);
     }
 }

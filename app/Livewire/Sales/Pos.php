@@ -24,7 +24,7 @@ class Pos extends Component
 {
     public string $search = '';
 
-    /** @var array<int, array{product_id:int,name:string,base_unit:string,quantity:string,unit_price_cents:int,discount_cents:int,allows_fractional:bool}> */
+    /** @var array<int, array{product_id:int,name:string,base_unit:string,selling_unit:string,units_per_base:string,quantity:string,unit_price_cents:int,discount_cents:int,allows_fractional:bool}> */
     public array $cart = [];
 
     public int $nextCartLineId = 1;
@@ -87,6 +87,8 @@ class Pos extends Component
             'product_id' => $product->id,
             'name' => $product->name,
             'base_unit' => $product->base_unit,
+            'selling_unit' => $product->effectiveSellingUnit(),
+            'units_per_base' => $product->effectiveUnitsPerBase(),
             'quantity' => '1',
             'unit_price_cents' => $product->selling_price_cents,
             'discount_cents' => 0,
@@ -247,6 +249,7 @@ class Pos extends Component
             'quantity' => $line['quantity'],
             'unit_price_cents' => $line['unit_price_cents'],
             'discount_cents' => $line['discount_cents'],
+            'units_per_base' => $line['units_per_base'] ?? '1',
         ], $this->cart));
     }
 

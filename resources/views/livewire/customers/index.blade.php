@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <x-table>
+    <x-table scrollable>
         <thead>
             <tr>
                 <x-table.th>Name</x-table.th>

@@ -101,8 +101,9 @@ class CompleteSale
             }
 
             $product = Product::findOrFail($lineData['product_id']);
-            $quantity = (string) $lineData['quantity'];
-            $unitPriceCents = (int) $lineData['unit_price_cents'];
+            $quantity = (string) $lineData['quantity']; // in selling units
+            $unitPriceCents = (int) $lineData['unit_price_cents']; // per selling unit
+            $unitsPerBase = (string) ($lineData['units_per_base'] ?? '1');
 
             $lineGross = (int) round((float) bcmul($quantity, (string) $unitPriceCents, 6));
             $lineTotal = $lineGross - $discountCents;
@@ -116,7 +117,10 @@ class CompleteSale
                 'line_total_cents' => $lineTotal,
             ]);
 
-            foreach (($this->allocateFefoBatches)($product, $quantity) as $allocation) {
+            // Convert selling-unit quantity to base-unit quantity for stock deduction.
+            $baseQuantity = bcdiv($quantity, $unitsPerBase, 6);
+
+            foreach (($this->allocateFefoBatches)($product, $baseQuantity) as $allocation) {
                 $batch = $allocation['batch'];
                 $qty = $allocation['quantity'];
 

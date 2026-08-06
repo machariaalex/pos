@@ -27,6 +27,8 @@ class Product extends Model
         'name',
         'barcode',
         'base_unit',
+        'selling_unit',
+        'units_per_base',
         'buying_price_cents',
         'selling_price_cents',
         'reorder_level',
@@ -39,6 +41,7 @@ class Product extends Model
             'buying_price_cents' => 'integer',
             'selling_price_cents' => 'integer',
             'reorder_level' => 'decimal:3',
+            'units_per_base' => 'decimal:3',
             'is_active' => 'boolean',
         ];
     }
@@ -58,9 +61,21 @@ class Product extends Model
         return $this->hasMany(SaleLine::class);
     }
 
+    /** The unit shown to the customer on the sell screen and receipt. */
+    public function effectiveSellingUnit(): string
+    {
+        return $this->selling_unit ?? $this->base_unit;
+    }
+
+    /** How many selling units fit in one base unit (stock unit). */
+    public function effectiveUnitsPerBase(): string
+    {
+        return (string) ($this->units_per_base ?? '1.000');
+    }
+
     public function allowsFractionalQuantity(): bool
     {
-        return in_array($this->base_unit, self::FRACTIONAL_UNITS, true);
+        return in_array($this->effectiveSellingUnit(), self::FRACTIONAL_UNITS, true);
     }
 
     public function stockOnHand(): string

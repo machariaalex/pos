@@ -18,9 +18,11 @@ class ReceiveBatch
         int $buyingPriceCents,
         string $receivedAt,
         User $user,
+        ?int $supplierId = null,
     ): Batch {
         $batch = Batch::create([
             'product_id' => $product->id,
+            'supplier_id' => $supplierId,
             'batch_number' => $batchNumber ?: $this->generateBatchNumber($product),
             'expiry_date' => $expiryDate,
             'quantity_received' => $quantityReceived,

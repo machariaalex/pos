@@ -1,10 +1,12 @@
 <div class="w-full max-w-sm rounded-card border border-surface-border bg-surface-card p-8 shadow-sm">
     <div class="mb-6">
-        <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-700 text-white">
-            <x-heroicon-o-shopping-bag class="h-6 w-6" />
+        <div class="mb-3 flex items-center gap-3">
+            <img src="{{ asset('images/waingo.png') }}" alt="Waingo Farm Agrovet" class="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-primary-700/30">
+            <div>
+                <h1 class="text-xl font-semibold text-text-primary">{{ config('app.name') }}</h1>
+                <p class="text-sm text-text-muted">Sign in to continue</p>
+            </div>
         </div>
-        <h1 class="text-xl font-semibold text-text-primary">{{ config('app.name') }}</h1>
-        <p class="mt-1 text-sm text-text-muted">Sign in to continue</p>
     </div>
 
     <form wire:submit="login" class="space-y-4">

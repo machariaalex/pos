@@ -39,8 +39,8 @@
         </label>
     </div>
 
-    <x-table>
-        <thead class="border-b border-surface-border bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
+    <x-table scrollable>
+        <thead class="sticky top-0 z-10 border-b border-surface-border bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-muted">
             <tr>
                 <th class="px-4 py-3">Name</th>
                 <th class="px-4 py-3">Category</th>
@@ -142,13 +142,36 @@
                     @error('barcode') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-text-secondary">Base unit</label>
-                    <select wire:model="baseUnit" class="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
+                    <label class="mb-1 block text-sm font-medium text-text-secondary">Stock unit (how you receive it)</label>
+                    <select wire:model.live="baseUnit" class="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
                         @foreach (\App\Models\Product::UNITS as $unit)
                             <option value="{{ $unit }}">{{ $unit }}</option>
                         @endforeach
                     </select>
                 </div>
+                <label class="flex items-center gap-2 text-sm text-text-secondary">
+                    <input type="checkbox" wire:model.live="hasSellingUnit" class="rounded border-surface-border text-primary-700 focus:ring-primary-600">
+                    Sell in a different unit (e.g. receive bags, sell per kg)
+                </label>
+                @if ($hasSellingUnit)
+                    <div class="grid grid-cols-2 gap-4 rounded-lg border border-surface-border bg-surface-muted p-3">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-text-secondary">Selling unit</label>
+                            <select wire:model="sellingUnit" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
+                                <option value="">Select...</option>
+                                @foreach (\App\Models\Product::UNITS as $unit)
+                                    <option value="{{ $unit }}">{{ $unit }}</option>
+                                @endforeach
+                            </select>
+                            @error('sellingUnit') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-text-secondary">{{ $sellingUnit ?: 'units' }} per 1 {{ $baseUnit }}</label>
+                            <input type="number" step="0.001" min="0.001" wire:model="unitsPerBase" class="font-tabular w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600" placeholder="e.g. 50">
+                            @error('unitsPerBase') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                @endif
                 <div class="grid grid-cols-2 gap-4">
                     @can('view-buying-price')
                         <div>

@@ -4,17 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? config('app.name') }}</title>
+    <link rel="icon" href="{{ asset('images/waingo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="flex min-h-screen bg-surface text-text-primary antialiased">
+<body class="flex h-screen overflow-hidden bg-surface text-text-primary antialiased">
     <aside class="flex w-16 shrink-0 flex-col bg-primary-950 print:hidden lg:w-64">
-        <div class="flex items-center gap-3 px-3 py-5 lg:px-5">
-            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-700 text-white">
-                <x-heroicon-o-sparkles class="h-5 w-5" />
-            </div>
-            <span class="hidden truncate text-base font-semibold text-white lg:inline">{{ config('app.name') }}</span>
-        </div>
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-3 py-4 lg:px-5">
+            <img src="{{ asset('images/waingo.png') }}" alt="Waingo Farm Agrovet" class="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-primary-700/50">
+            <span class="hidden truncate text-base font-semibold text-white lg:inline">Waingo Farm</span>
+        </a>
 
         <nav class="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-2 lg:px-3">
             <x-nav-item :route="route('sales.pos')" :active="request()->routeIs('sales.pos')" icon="shopping-cart">Sell</x-nav-item>
@@ -56,7 +55,7 @@
         </div>
     </aside>
 
-    <div class="min-w-0 flex-1">
+    <div class="min-h-0 min-w-0 flex-1 overflow-y-auto">
         <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:p-0">
             {{ $slot }}
         </main>
