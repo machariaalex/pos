@@ -3,7 +3,7 @@
         <a href="{{ route('inventory.products.index') }}" class="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-primary hover:underline">
             <x-heroicon-o-arrow-left class="h-4 w-4" /> Products
         </a>
-        <div class="mt-1 flex items-center justify-between">
+        <div class="mt-1 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-semibold text-text-primary">{{ $product->name }}</h1>
                 <p class="text-sm text-text-muted">
@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-card :padding="false" class="p-4">
             <p class="text-xs font-semibold uppercase tracking-wide text-text-muted">Stock on hand</p>
             <p class="font-tabular mt-1 text-lg font-semibold {{ $product->isLowStock() ? 'text-danger-600' : 'text-text-primary' }}">

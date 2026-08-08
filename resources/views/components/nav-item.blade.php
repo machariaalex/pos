@@ -10,5 +10,5 @@
     ])
 >
     <x-dynamic-component :component="'heroicon-o-'.$icon" class="h-5 w-5 shrink-0" />
-    <span class="truncate lg:inline hidden">{{ $slot }}</span>
+    <span class="truncate">{{ $slot }}</span>
 </a>

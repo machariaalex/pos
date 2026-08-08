@@ -1,5 +1,5 @@
 <div>
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-2xl font-semibold text-text-primary">Products</h1>
         @can('edit-price')
             <div class="flex items-center gap-3">
