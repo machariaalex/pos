@@ -138,6 +138,65 @@ class ProcessReturnTest extends CompleteSaleTestBase
         $this->assertDatabaseCount('customer_ledger_entries', 0);
     }
 
+    public function test_full_return_of_a_unit_converted_product_restocks_in_base_units_not_selling_units(): void
+    {
+        // Received as 2 bags (base unit "pcs"), sold per kg: 1 bag = 50 kg.
+        $cashier = User::factory()->attendant()->create();
+        $manager = User::factory()->manager()->create();
+        $product = $this->makeProduct([
+            'base_unit' => 'pcs',
+            'selling_unit' => 'kg',
+            'units_per_base' => 50,
+            'selling_price_cents' => 200,
+        ]);
+        $batch = $this->makeBatch($product, $cashier, ['quantity_remaining' => 2, 'quantity_received' => 2]);
+
+        $sale = $this->complete(
+            lines: [['product_id' => $product->id, 'quantity' => '20', 'unit_price_cents' => 200, 'units_per_base' => '50']],
+            customer: null,
+            payments: [['method' => Payment::METHOD_CASH, 'amount_cents' => 4000]],
+            cashier: $cashier,
+        );
+
+        // 20 kg sold / 50 kg-per-bag = 0.4 bags deducted.
+        $this->assertSame('1.600', (string) $batch->fresh()->quantity_remaining);
+
+        $line = $sale->lines->first();
+        (new ProcessReturn)($sale, [['sale_line_id' => $line->id, 'quantity_returned' => '20']], 'Wrong item', $manager, $cashier);
+
+        // Full return of the 20 kg must give back exactly the 0.4 bags taken,
+        // not 20 (which would be the selling-unit number applied directly).
+        $this->assertSame('2.000', (string) $batch->fresh()->quantity_remaining);
+    }
+
+    public function test_partial_return_of_a_unit_converted_product_restocks_proportionally_in_base_units(): void
+    {
+        $cashier = User::factory()->attendant()->create();
+        $manager = User::factory()->manager()->create();
+        $product = $this->makeProduct([
+            'base_unit' => 'pcs',
+            'selling_unit' => 'kg',
+            'units_per_base' => 50,
+            'selling_price_cents' => 200,
+        ]);
+        $batch = $this->makeBatch($product, $cashier, ['quantity_remaining' => 2, 'quantity_received' => 2]);
+
+        $sale = $this->complete(
+            lines: [['product_id' => $product->id, 'quantity' => '20', 'unit_price_cents' => 200, 'units_per_base' => '50']],
+            customer: null,
+            payments: [['method' => Payment::METHOD_CASH, 'amount_cents' => 4000]],
+            cashier: $cashier,
+        );
+        $this->assertSame('1.600', (string) $batch->fresh()->quantity_remaining);
+
+        $line = $sale->lines->first();
+        // Return half the kg sold (10 of the 20 kg).
+        (new ProcessReturn)($sale, [['sale_line_id' => $line->id, 'quantity_returned' => '10']], 'Damaged', $manager, $cashier);
+
+        // Half of the 0.4 bags originally deducted comes back: 1.6 + 0.2 = 1.8.
+        $this->assertSame('1.800', (string) $batch->fresh()->quantity_remaining);
+    }
+
     public function test_return_is_audit_logged(): void
     {
         $cashier = User::factory()->attendant()->create();

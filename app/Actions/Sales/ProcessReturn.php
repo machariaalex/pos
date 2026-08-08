@@ -66,8 +66,18 @@ class ProcessReturn
                 $unitTotal = bcdiv((string) $saleLine->line_total_cents, (string) $saleLine->quantity, 6);
                 $refundAmount = (int) round((float) bcmul($quantityReturned, $unitTotal, 6));
 
-                $batch = $saleLine->batchAllocations()->orderBy('id')->firstOrFail()->batch;
-                $batch->quantity_remaining = bcadd((string) $batch->quantity_remaining, $quantityReturned, 3);
+                // $quantityReturned is in the sale line's selling units (e.g. kg
+                // for a product sold per kg out of bags received). Batches track
+                // stock in base units (e.g. bags), so restock the same proportion
+                // of the batch allocation's original base-unit quantity rather
+                // than adding the selling-unit number directly — otherwise a
+                // return on a converted-unit product inflates stock by whatever
+                // the unit conversion ratio is.
+                $proportionReturned = bcdiv($quantityReturned, (string) $saleLine->quantity, 6);
+                $batchAllocation = $saleLine->batchAllocations()->orderBy('id')->firstOrFail();
+                $batch = $batchAllocation->batch;
+                $baseQuantityRestocked = bcmul((string) $batchAllocation->quantity, $proportionReturned, 3);
+                $batch->quantity_remaining = bcadd((string) $batch->quantity_remaining, $baseQuantityRestocked, 3);
                 $batch->save();
 
                 SaleReturnLine::create([

@@ -66,7 +66,7 @@
                         @if ($groupBy === 'product')
                             <x-table.td>{{ $row->name }}</x-table.td>
                             <x-table.td align="right">
-                                <span class="font-tabular text-text-secondary">{{ $row->total_quantity }} {{ $row->base_unit }}</span>
+                                <span class="font-tabular text-text-secondary">{{ $row->total_quantity }} {{ $row->selling_unit ?? $row->base_unit }}</span>
                             </x-table.td>
                             <x-table.td align="right">
                                 <span class="font-tabular font-semibold text-text-primary">{{ number_format($row->total_cents / 100, 2) }}</span>

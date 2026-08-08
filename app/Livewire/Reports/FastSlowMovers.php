@@ -38,10 +38,11 @@ class FastSlowMovers extends Component
                     ->whereDate('sales.completed_at', '>=', $this->dateFrom)
                     ->whereDate('sales.completed_at', '<=', $this->dateTo);
             })
-            ->groupBy('products.id', 'products.name', 'products.base_unit')
+            ->groupBy('products.id', 'products.name', 'products.base_unit', 'products.selling_unit')
             ->get([
                 'products.name',
                 'products.base_unit',
+                'products.selling_unit',
                 DB::raw('coalesce(sum(case when sales.id is not null then sale_lines.quantity else 0 end), 0) as total_quantity'),
                 DB::raw('coalesce(sum(case when sales.id is not null then sale_lines.line_total_cents else 0 end), 0) as total_cents'),
             ]);

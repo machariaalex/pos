@@ -68,6 +68,38 @@ class ReceiptTest extends TestCase
         $response->assertSee('130.00');
     }
 
+    public function test_receipt_shows_the_products_selling_unit_not_its_base_unit(): void
+    {
+        $category = Category::first();
+        $bagProduct = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Layers Mash',
+            'base_unit' => 'pcs',
+            'selling_unit' => 'kg',
+            'units_per_base' => 50,
+            'buying_price_cents' => 4000,
+            'selling_price_cents' => 100,
+            'reorder_level' => 1,
+        ]);
+        Batch::create([
+            'product_id' => $bagProduct->id, 'batch_number' => 'B2', 'expiry_date' => Carbon::now()->addMonths(6),
+            'quantity_received' => 2, 'quantity_remaining' => 2,
+            'buying_price_cents' => 4000, 'received_at' => Carbon::now(), 'created_by' => $this->cashier->id,
+        ]);
+
+        $sale = app(CompleteSale::class)(
+            [['product_id' => $bagProduct->id, 'quantity' => '10', 'unit_price_cents' => 100, 'units_per_base' => '50']],
+            null,
+            [['method' => Payment::METHOD_CASH, 'amount_cents' => 1000]],
+            $this->cashier,
+        );
+
+        $response = $this->actingAs($this->cashier)->get(route('sales.receipt', $sale));
+
+        $response->assertSee('10.000 kg');
+        $response->assertDontSee('10.000 pcs');
+    }
+
     public function test_attendant_can_initiate_a_void_but_needs_a_valid_owner_pin(): void
     {
         $owner = User::factory()->owner()->create();

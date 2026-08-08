@@ -58,7 +58,7 @@
                 <span>{{ $line->product->name }}</span>
             </div>
             <div class="flex justify-between text-slate-600">
-                <span>{{ $line->quantity }} {{ $line->product->base_unit }} @ {{ number_format($line->unit_price_cents / 100, 2) }}</span>
+                <span>{{ $line->quantity }} {{ $line->product->effectiveSellingUnit() }} @ {{ number_format($line->unit_price_cents / 100, 2) }}</span>
                 <span>{{ number_format($line->line_total_cents / 100, 2) }}</span>
             </div>
             @if ($line->discount_cents > 0)

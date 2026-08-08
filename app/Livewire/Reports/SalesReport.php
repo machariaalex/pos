@@ -64,11 +64,12 @@ class SalesReport extends Component
             ->where('sales.status', Sale::STATUS_COMPLETED)
             ->whereDate('sales.completed_at', '>=', $this->dateFrom)
             ->whereDate('sales.completed_at', '<=', $this->dateTo)
-            ->groupBy('products.id', 'products.name', 'products.base_unit')
+            ->groupBy('products.id', 'products.name', 'products.base_unit', 'products.selling_unit')
             ->orderByDesc(DB::raw('sum(sale_lines.line_total_cents)'))
             ->get([
                 'products.name',
                 'products.base_unit',
+                'products.selling_unit',
                 DB::raw('sum(sale_lines.quantity) as total_quantity'),
                 DB::raw('sum(sale_lines.line_total_cents) as total_cents'),
             ]);

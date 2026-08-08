@@ -36,7 +36,7 @@
                         <tr class="hover:bg-surface-muted/50">
                             <x-table.td>{{ $row->name }}</x-table.td>
                             <x-table.td align="right">
-                                <span class="font-tabular text-text-secondary">{{ $row->total_quantity }} {{ $row->base_unit }}</span>
+                                <span class="font-tabular text-text-secondary">{{ $row->total_quantity }} {{ $row->selling_unit ?? $row->base_unit }}</span>
                             </x-table.td>
                         </tr>
                     @endforeach
@@ -62,7 +62,7 @@
                             <x-table.td>{{ $row->name }}</x-table.td>
                             <x-table.td align="right">
                                 <span class="font-tabular {{ $row->total_quantity == 0 ? 'font-semibold text-danger-600' : 'text-text-secondary' }}">
-                                    {{ $row->total_quantity }} {{ $row->base_unit }}
+                                    {{ $row->total_quantity }} {{ $row->selling_unit ?? $row->base_unit }}
                                 </span>
                             </x-table.td>
                         </tr>

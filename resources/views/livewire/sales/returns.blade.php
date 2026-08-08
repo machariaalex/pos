@@ -21,7 +21,7 @@
                     @php $available = $this->availableToReturn($line->id, $line->quantity); @endphp
                     <tr>
                         <td class="px-4 py-2 text-slate-700">{{ $line->product->name }}</td>
-                        <td class="px-4 py-2 text-slate-600">{{ $line->quantity }} {{ $line->product->base_unit }}</td>
+                        <td class="px-4 py-2 text-slate-600">{{ $line->quantity }} {{ $line->product->effectiveSellingUnit() }}</td>
                         <td class="px-4 py-2 text-slate-500">{{ $this->alreadyReturned($line->id) }}</td>
                         <td class="px-4 py-2">
                             @if (bccomp($available, '0', 3) > 0)
