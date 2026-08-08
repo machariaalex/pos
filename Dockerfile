@@ -7,14 +7,15 @@ RUN apk add --no-cache \
     nginx \
     nodejs \
     npm \
-    postgresql-dev \
+    sqlite-dev \
     git \
     zip \
     unzip \
     curl
 
-# PHP extensions needed for Laravel + PostgreSQL
-RUN docker-php-ext-install pdo pdo_pgsql opcache pcntl
+# PHP extensions needed for Laravel + SQLite (matches render.yaml's
+# DB_CONNECTION=sqlite — see the persistent disk mounted at /var/data)
+RUN docker-php-ext-install pdo pdo_sqlite opcache pcntl
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

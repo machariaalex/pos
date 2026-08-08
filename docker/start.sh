@@ -7,6 +7,11 @@ if [ ! -f "${DB_DATABASE}" ]; then
     touch "${DB_DATABASE}"
 fi
 
+# php-fpm workers run as www-data, but this script runs as root, so the
+# disk (and the db file/its WAL/journal siblings) must be writable by
+# www-data or every request will fail with "unable to open database file".
+chown -R www-data:www-data "$(dirname "${DB_DATABASE}")"
+
 echo "Running migrations..."
 php artisan migrate --force
 
