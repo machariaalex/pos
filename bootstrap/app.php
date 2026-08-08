@@ -15,6 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
         ]);
+
+        // Render terminates TLS at its edge and forwards to this container
+        // over plain HTTP, so without this Laravel never sees the request as
+        // HTTPS — it trusted no proxy's X-Forwarded-Proto header, generated
+        // http:// asset/URL links on an https:// page, and browsers blocked
+        // them as mixed content. The container itself isn't reachable except
+        // through Render's own edge, so trusting all proxies here is safe.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
