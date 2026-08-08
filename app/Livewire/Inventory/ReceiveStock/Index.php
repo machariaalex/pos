@@ -112,21 +112,30 @@ class Index extends Component
         }
 
         $product = Product::findOrFail($this->productId);
+        $canSeeBuyingPrice = Gate::allows('view-buying-price');
 
         $data = $this->validate([
             'batchNumber' => ['nullable', 'string', 'max:100'],
             'expiryDate' => ['nullable', 'date'],
             'quantityReceived' => ['required', 'numeric', 'gt:0'],
-            'buyingPrice' => ['required', 'numeric', 'min:0'],
+            'buyingPrice' => [$canSeeBuyingPrice ? 'required' : 'nullable', 'numeric', 'min:0'],
             'receivedAt' => ['required', 'date'],
         ]);
+
+        // Without view-buying-price, ignore whatever was submitted for
+        // buyingPrice (a hidden field can still be tampered with client-side)
+        // and carry the product's last known cost forward instead — the
+        // field is never zero-filled here since batches feed COGS directly.
+        $buyingPriceCents = $canSeeBuyingPrice
+            ? (int) round($data['buyingPrice'] * 100)
+            : $product->buying_price_cents;
 
         $action(
             $product,
             $data['batchNumber'] ?: null,
             $data['expiryDate'] ?: null,
             (string) $data['quantityReceived'],
-            (int) round($data['buyingPrice'] * 100),
+            $buyingPriceCents,
             $data['receivedAt'],
             auth()->user(),
             $this->supplierId,

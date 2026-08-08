@@ -114,11 +114,13 @@
                         <input type="number" step="0.001" wire:model="quantityReceived" autofocus class="font-tabular w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
                         @error('quantityReceived') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                     </div>
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-text-secondary">Buying price per {{ $selectedProduct->base_unit }} (KES)</label>
-                        <input type="number" step="0.01" wire:model="buyingPrice" class="font-tabular w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
-                        @error('buyingPrice') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
-                    </div>
+                    @can('view-buying-price')
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-text-secondary">Buying price per {{ $selectedProduct->base_unit }} (KES)</label>
+                            <input type="number" step="0.01" wire:model="buyingPrice" class="font-tabular w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
+                            @error('buyingPrice') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
+                        </div>
+                    @endcan
                     <div>
                         <label class="mb-1 block text-sm font-medium text-text-secondary">Received on</label>
                         <input type="date" wire:model="receivedAt" class="w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
