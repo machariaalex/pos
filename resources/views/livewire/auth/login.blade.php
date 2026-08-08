@@ -25,13 +25,7 @@
 
         <div>
             <label for="password" class="mb-1 block text-sm font-medium text-text-primary">Password</label>
-            <input
-                type="password"
-                id="password"
-                wire:model="password"
-                autocomplete="current-password"
-                class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-700/30"
-            >
+            <x-password-input model="password" id="password" autocomplete="current-password" />
             @error('password') <p class="mt-1 text-xs text-danger-600">{{ $message }}</p> @enderror
         </div>
 

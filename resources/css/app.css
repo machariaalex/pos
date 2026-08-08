@@ -75,6 +75,12 @@ body {
     color: var(--color-text-primary);
 }
 
+/* Hides elements until Alpine has initialized, e.g. the eye-slash icon in
+   x-password-input — without this, x-cloak is just an inert attribute. */
+[x-cloak] {
+    display: none !important;
+}
+
 /* Tabular figures wherever money/quantities appear in tables so columns
    align — applied via the `.font-tabular` utility class in views. */
 .font-tabular {
