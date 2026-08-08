@@ -7,10 +7,18 @@ if [ ! -f "${DB_DATABASE}" ]; then
     touch "${DB_DATABASE}"
 fi
 
+# storage/logs lives in the container's ephemeral filesystem by default, so
+# every error would be silently lost on the next restart/redeploy. Point it
+# at the persistent disk instead by symlinking it there.
+DATA_DIR="$(dirname "${DB_DATABASE}")"
+mkdir -p "${DATA_DIR}/logs"
+rm -rf storage/logs
+ln -s "${DATA_DIR}/logs" storage/logs
+
 # php-fpm workers run as www-data, but this script runs as root, so the
-# disk (and the db file/its WAL/journal siblings) must be writable by
-# www-data or every request will fail with "unable to open database file".
-chown -R www-data:www-data "$(dirname "${DB_DATABASE}")"
+# disk (db file, its WAL/journal siblings, and now logs) must be writable
+# by www-data or every request will fail with "unable to open database file".
+chown -R www-data:www-data "${DATA_DIR}"
 
 echo "Running migrations..."
 php artisan migrate --force
