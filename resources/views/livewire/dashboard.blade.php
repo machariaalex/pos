@@ -144,7 +144,7 @@
                         <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Low stock</p>
                         <div class="space-y-1.5">
                             @foreach ($lowStockProducts as $product)
-                                <x-alert-row variant="warn" icon="arrow-trending-down">
+                                <x-alert-row variant="danger" icon="arrow-trending-down">
                                     <p class="truncate text-sm font-medium text-text-primary">{{ $product->name }}</p>
                                     <p class="text-xs text-text-secondary">{{ $product->stockOnHand() }} {{ $product->base_unit }} left &middot; reorder at {{ $product->reorder_level }}</p>
                                     <x-slot:action>
@@ -161,7 +161,7 @@
                         <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Expiring within 60 days</p>
                         <div class="space-y-1.5">
                             @foreach ($expiringSoonBatches as $batch)
-                                <x-alert-row variant="warn" icon="clock">
+                                <x-alert-row variant="danger" icon="clock">
                                     <p class="truncate text-sm font-medium text-text-primary">{{ $batch->product->name }}</p>
                                     <p class="text-xs text-text-secondary">Batch {{ $batch->batch_number }} &middot; expires {{ $batch->expiry_date->toDateString() }} &middot; {{ $batch->quantity_remaining }} {{ $batch->product->base_unit }} left</p>
                                     <x-slot:action>
