@@ -13,8 +13,15 @@ services:
         value: "Waingo Farm Agrovet"
       - key: APP_ENV
         value: production
+      # Render's generateValue produces a random string, not the
+      # base64:<32-byte-key> format Laravel's encrypter requires — every
+      # request touching encryption (session handling included) crashed
+      # with "Unsupported cipher or incorrect key length". Set manually in
+      # the dashboard instead (Environment tab) with the output of
+      # `php artisan key:generate --show`; sync: false keeps the Blueprint
+      # from overwriting it on the next sync.
       - key: APP_KEY
-        generateValue: true
+        sync: false
       - key: APP_DEBUG
         value: false
       - key: APP_URL
