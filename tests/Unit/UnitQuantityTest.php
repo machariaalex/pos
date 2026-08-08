@@ -138,4 +138,47 @@ class UnitQuantityTest extends TestCase
 
         $this->assertFalse($product->fresh()->isLowStock());
     }
+
+    public function test_has_bulk_pack_requires_selling_unit_pack_size_and_pack_price(): void
+    {
+        $category = Category::create(['name' => 'Feeds']);
+        $base = [
+            'category_id' => $category->id,
+            'name' => 'Chick Mash',
+            'base_unit' => 'pcs',
+            'buying_price_cents' => 4000,
+            'selling_price_cents' => 60,
+            'reorder_level' => 1,
+        ];
+
+        $noConversion = Product::create($base + ['name' => 'No conversion', 'pack_size' => 50, 'pack_price_cents' => 250000]);
+        $this->assertFalse($noConversion->hasBulkPack(), 'no selling_unit means no bulk pack, even with pack fields set');
+
+        $noPackFields = Product::create($base + ['name' => 'No pack fields', 'selling_unit' => 'kg', 'units_per_base' => 50]);
+        $this->assertFalse($noPackFields->hasBulkPack());
+
+        $full = Product::create($base + ['name' => 'Full config', 'selling_unit' => 'kg', 'units_per_base' => 50, 'pack_size' => 50, 'pack_price_cents' => 250000]);
+        $this->assertTrue($full->hasBulkPack());
+    }
+
+    public function test_pack_unit_price_cents_divides_pack_price_by_pack_size(): void
+    {
+        $category = Category::create(['name' => 'Feeds']);
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Chick Mash',
+            'base_unit' => 'pcs',
+            'selling_unit' => 'kg',
+            'units_per_base' => 50,
+            'pack_size' => 50,
+            'pack_price_cents' => 250000,
+            'buying_price_cents' => 4000,
+            'selling_price_cents' => 60,
+            'reorder_level' => 1,
+        ]);
+
+        // KES 2,500 for a 50kg bag = KES 50/kg bulk rate, cheaper than the
+        // KES 60/kg retail rate — the whole point of the feature.
+        $this->assertSame(5000, $product->packUnitPriceCents());
+    }
 }

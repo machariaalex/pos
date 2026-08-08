@@ -230,4 +230,87 @@ class ProductManagementTest extends TestCase
             ->assertSee('Layers Mash')
             ->assertDontSee('Dairy Meal');
     }
+
+    public function test_manager_can_create_a_product_with_a_bulk_pack_price(): void
+    {
+        $manager = User::factory()->manager()->create();
+
+        Livewire::actingAs($manager)
+            ->test(ProductsIndex::class)
+            ->call('startCreate')
+            ->set('name', 'Chick Mash')
+            ->set('categoryId', $this->category->id)
+            ->set('baseUnit', 'pcs')
+            ->set('hasSellingUnit', true)
+            ->set('sellingUnit', 'kg')
+            ->set('unitsPerBase', '50')
+            ->set('hasBulkPack', true)
+            ->set('packSize', '50')
+            ->set('packPrice', '2500')
+            ->set('buyingPrice', '40')
+            ->set('sellingPrice', '60')
+            ->set('reorderLevel', '1')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Chick Mash',
+            'pack_size' => 50,
+            'pack_price_cents' => 250000,
+        ]);
+    }
+
+    public function test_bulk_pack_fields_are_ignored_when_the_toggle_is_off(): void
+    {
+        $manager = User::factory()->manager()->create();
+
+        Livewire::actingAs($manager)
+            ->test(ProductsIndex::class)
+            ->call('startCreate')
+            ->set('name', 'Dairy Meal')
+            ->set('categoryId', $this->category->id)
+            ->set('baseUnit', 'kg')
+            ->set('hasBulkPack', false)
+            ->set('packSize', '50')
+            ->set('packPrice', '2500')
+            ->set('buyingPrice', '40')
+            ->set('sellingPrice', '60')
+            ->set('reorderLevel', '1')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Dairy Meal',
+            'pack_size' => null,
+            'pack_price_cents' => null,
+        ]);
+    }
+
+    public function test_bulk_pack_requires_a_selling_unit_to_be_configured(): void
+    {
+        $manager = User::factory()->manager()->create();
+
+        Livewire::actingAs($manager)
+            ->test(ProductsIndex::class)
+            ->call('startCreate')
+            ->set('name', 'Chick Mash')
+            ->set('categoryId', $this->category->id)
+            ->set('baseUnit', 'pcs')
+            ->set('hasSellingUnit', false)
+            ->set('hasBulkPack', true)
+            ->set('packSize', '50')
+            ->set('packPrice', '2500')
+            ->set('buyingPrice', '40')
+            ->set('sellingPrice', '60')
+            ->set('reorderLevel', '1')
+            ->call('save');
+
+        // Without hasSellingUnit the bulk-pack toggle never renders, so the
+        // component's own validation must not require pack fields either.
+        $this->assertDatabaseHas('products', [
+            'name' => 'Chick Mash',
+            'pack_size' => null,
+            'pack_price_cents' => null,
+        ]);
+    }
 }

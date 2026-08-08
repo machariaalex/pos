@@ -279,4 +279,117 @@ class PosTest extends TestCase
 
         $this->assertDatabaseCount('sales', 0);
     }
+
+    private function bulkProduct(): Product
+    {
+        return Product::create([
+            'category_id' => $this->product->category_id,
+            'name' => 'Chick Mash',
+            'base_unit' => 'pcs',
+            'selling_unit' => 'kg',
+            'units_per_base' => 50,
+            'pack_size' => 50,
+            'pack_price_cents' => 250000, // KES 2,500/bag = KES 50/kg bulk rate
+            'buying_price_cents' => 4000,
+            'selling_price_cents' => 6000, // KES 60/kg retail rate
+            'reorder_level' => 1,
+        ]);
+    }
+
+    public function test_add_product_pack_creates_a_line_at_the_bulk_rate(): void
+    {
+        $attendant = User::factory()->attendant()->create();
+        $product = $this->bulkProduct();
+        Batch::create([
+            'product_id' => $product->id, 'batch_number' => 'B1', 'expiry_date' => Carbon::now()->addMonths(6),
+            'quantity_received' => 3, 'quantity_remaining' => 3,
+            'buying_price_cents' => 4000, 'received_at' => Carbon::now(), 'created_by' => $attendant->id,
+        ]);
+
+        $component = Livewire::actingAs($attendant)
+            ->test(Pos::class)
+            ->call('addProductPack', $product->id);
+
+        $cart = $component->get('cart');
+        $this->assertCount(1, $cart);
+        $line = reset($cart);
+        $this->assertSame('50.000', $line['quantity']);
+        $this->assertSame(5000, $line['unit_price_cents']);
+        $this->assertTrue($line['is_pack']);
+    }
+
+    public function test_add_product_pack_twice_merges_by_another_pack_size(): void
+    {
+        $attendant = User::factory()->attendant()->create();
+        $product = $this->bulkProduct();
+        Batch::create([
+            'product_id' => $product->id, 'batch_number' => 'B1', 'expiry_date' => Carbon::now()->addMonths(6),
+            'quantity_received' => 3, 'quantity_remaining' => 3,
+            'buying_price_cents' => 4000, 'received_at' => Carbon::now(), 'created_by' => $attendant->id,
+        ]);
+
+        $component = Livewire::actingAs($attendant)
+            ->test(Pos::class)
+            ->call('addProductPack', $product->id)
+            ->call('addProductPack', $product->id);
+
+        $cart = $component->get('cart');
+        $this->assertCount(1, $cart);
+        $this->assertSame('100.000', reset($cart)['quantity']);
+    }
+
+    public function test_retail_and_pack_adds_of_the_same_product_stay_as_separate_lines(): void
+    {
+        $attendant = User::factory()->attendant()->create();
+        $product = $this->bulkProduct();
+        Batch::create([
+            'product_id' => $product->id, 'batch_number' => 'B1', 'expiry_date' => Carbon::now()->addMonths(6),
+            'quantity_received' => 3, 'quantity_remaining' => 3,
+            'buying_price_cents' => 4000, 'received_at' => Carbon::now(), 'created_by' => $attendant->id,
+        ]);
+
+        $component = Livewire::actingAs($attendant)
+            ->test(Pos::class)
+            ->call('addProduct', $product->id)
+            ->call('addProductPack', $product->id);
+
+        $cart = $component->get('cart');
+        $this->assertCount(2, $cart);
+        $lines = array_values($cart);
+        $this->assertFalse($lines[0]['is_pack']);
+        $this->assertSame('1', $lines[0]['quantity']);
+        $this->assertSame(6000, $lines[0]['unit_price_cents']);
+        $this->assertTrue($lines[1]['is_pack']);
+        $this->assertSame('50.000', $lines[1]['quantity']);
+        $this->assertSame(5000, $lines[1]['unit_price_cents']);
+    }
+
+    public function test_completing_a_sale_with_a_mixed_retail_and_pack_cart_charges_and_deducts_correctly(): void
+    {
+        $attendant = User::factory()->attendant()->create();
+        $product = $this->bulkProduct();
+        // 3 "pcs" (bags) in stock = 150kg.
+        $batch = Batch::create([
+            'product_id' => $product->id, 'batch_number' => 'B1', 'expiry_date' => Carbon::now()->addMonths(6),
+            'quantity_received' => 3, 'quantity_remaining' => 3,
+            'buying_price_cents' => 4000, 'received_at' => Carbon::now(), 'created_by' => $attendant->id,
+        ]);
+
+        // 1 bag (50kg @ 50/kg = 2500) + 5kg loose (@ 60/kg = 300) = 2800 total.
+        Livewire::actingAs($attendant)
+            ->test(Pos::class)
+            ->call('addProductPack', $product->id)
+            ->call('addProduct', $product->id)
+            ->set('cart.2.quantity', '5')
+            ->call('addPayment', 'cash')
+            ->set('payments.0.amount', '2800.00')
+            ->call('completeSale');
+
+        $sale = Sale::latest()->first();
+        $this->assertNotNull($sale);
+        $this->assertSame(280000, $sale->total_cents);
+
+        // 55kg sold total / 50kg-per-bag = 1.1 bags deducted from the 3 in stock.
+        $this->assertSame('1.900', (string) $batch->fresh()->quantity_remaining);
+    }
 }

@@ -40,6 +40,12 @@ class Index extends Component
 
     public string $unitsPerBase = '1';
 
+    public bool $hasBulkPack = false;
+
+    public string $packSize = '';
+
+    public string $packPrice = '';
+
     public string $buyingPrice = '';
 
     public string $sellingPrice = '';
@@ -74,6 +80,7 @@ class Index extends Component
         $this->reset([
             'editingProductId', 'name', 'categoryId', 'barcode', 'buyingPrice', 'sellingPrice', 'reorderLevel',
             'showCategoryForm', 'newCategoryName', 'hasSellingUnit', 'sellingUnit', 'unitsPerBase',
+            'hasBulkPack', 'packSize', 'packPrice',
         ]);
         $this->baseUnit = Product::UNIT_KG;
         $this->unitsPerBase = '1';
@@ -94,6 +101,9 @@ class Index extends Component
         $this->hasSellingUnit = $product->selling_unit !== null;
         $this->sellingUnit = $product->selling_unit ?? '';
         $this->unitsPerBase = $product->selling_unit ? (string) $product->units_per_base : '1';
+        $this->hasBulkPack = $product->hasBulkPack();
+        $this->packSize = $product->pack_size !== null ? (string) $product->pack_size : '';
+        $this->packPrice = $product->pack_price_cents !== null ? number_format($product->pack_price_cents / 100, 2, '.', '') : '';
         $this->buyingPrice = number_format($product->buying_price_cents / 100, 2, '.', '');
         $this->sellingPrice = number_format($product->selling_price_cents / 100, 2, '.', '');
         $this->reorderLevel = (string) $product->reorder_level;
@@ -132,6 +142,8 @@ class Index extends Component
             'baseUnit' => ['required', Rule::in(Product::UNITS)],
             'sellingUnit' => [$this->hasSellingUnit ? 'required' : 'nullable', Rule::in(Product::UNITS)],
             'unitsPerBase' => [$this->hasSellingUnit ? 'required' : 'nullable', 'numeric', 'gt:0'],
+            'packSize' => [$this->hasSellingUnit && $this->hasBulkPack ? 'required' : 'nullable', 'numeric', 'gt:0'],
+            'packPrice' => [$this->hasSellingUnit && $this->hasBulkPack ? 'required' : 'nullable', 'numeric', 'gt:0'],
             'buyingPrice' => [$canSeeBuyingPrice ? 'required' : 'nullable', 'numeric', 'min:0'],
             'sellingPrice' => ['required', 'numeric', 'min:0'],
             'reorderLevel' => ['required', 'numeric', 'min:0'],
@@ -144,6 +156,8 @@ class Index extends Component
             'base_unit' => $data['baseUnit'],
             'selling_unit' => $this->hasSellingUnit ? $data['sellingUnit'] : null,
             'units_per_base' => $this->hasSellingUnit ? $data['unitsPerBase'] : 1,
+            'pack_size' => $this->hasSellingUnit && $this->hasBulkPack ? $data['packSize'] : null,
+            'pack_price_cents' => $this->hasSellingUnit && $this->hasBulkPack ? (int) round($data['packPrice'] * 100) : null,
             'selling_price_cents' => (int) round($data['sellingPrice'] * 100),
             'reorder_level' => $data['reorderLevel'],
             'is_active' => $this->isActive,

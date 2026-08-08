@@ -19,29 +19,44 @@
                 @if ($search !== '')
                     <div class="absolute inset-x-0 top-full z-10 mt-1 max-h-80 overflow-y-auto rounded-lg border border-surface-border bg-surface-card shadow-lg">
                         @forelse ($searchResults as $product)
-                            <button
-                                type="button"
-                                wire:click="addProduct({{ $product->id }})"
-                                wire:key="search-result-{{ $product->id }}"
-                                class="flex w-full items-center justify-between gap-3 border-b border-surface-border px-4 py-3 text-left last:border-0 hover:bg-primary-50"
-                            >
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-medium text-text-primary">{{ $product->name }}</p>
-                                    <span class="mt-0.5 inline-flex items-center gap-1 text-xs {{ $product->isLowStock() ? 'text-warn-700' : 'text-text-muted' }}">
-                                        @if ($product->isLowStock())
-                                            <x-heroicon-o-exclamation-triangle class="h-3 w-3" />
-                                        @endif
-                                        {{ $product->stockOnHand() }} {{ $product->base_unit }} in stock
-                                        @if ($product->selling_unit)
-                                            &middot; sell per {{ $product->selling_unit }}
-                                        @endif
-                                    </span>
-                                </div>
-                                <p class="font-tabular shrink-0 text-sm font-semibold text-primary-700">
-                                    KES {{ number_format($product->selling_price_cents / 100, 2) }}
-                                    <span class="text-xs font-normal text-text-muted">/{{ $product->base_unit }}</span>
-                                </p>
-                            </button>
+                            <div wire:key="search-result-{{ $product->id }}" class="border-b border-surface-border last:border-0">
+                                <button
+                                    type="button"
+                                    wire:click="addProduct({{ $product->id }})"
+                                    class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-primary-50"
+                                >
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-medium text-text-primary">{{ $product->name }}</p>
+                                        <span class="mt-0.5 inline-flex items-center gap-1 text-xs {{ $product->isLowStock() ? 'text-warn-700' : 'text-text-muted' }}">
+                                            @if ($product->isLowStock())
+                                                <x-heroicon-o-exclamation-triangle class="h-3 w-3" />
+                                            @endif
+                                            {{ $product->stockOnHand() }} {{ $product->base_unit }} in stock
+                                            @if ($product->selling_unit)
+                                                &middot; sell per {{ $product->selling_unit }}
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <p class="font-tabular shrink-0 text-sm font-semibold text-primary-700">
+                                        KES {{ number_format($product->selling_price_cents / 100, 2) }}
+                                        <span class="text-xs font-normal text-text-muted">/{{ $product->effectiveSellingUnit() }}</span>
+                                    </p>
+                                </button>
+                                @if ($product->hasBulkPack())
+                                    <button
+                                        type="button"
+                                        wire:click="addProductPack({{ $product->id }})"
+                                        class="flex w-full items-center justify-between gap-3 bg-success-50 px-4 py-2 text-left hover:bg-success-100"
+                                    >
+                                        <span class="text-xs font-medium text-success-700">
+                                            + Add 1 bulk pack — {{ number_format($product->pack_size, 0) }} {{ $product->selling_unit }}
+                                        </span>
+                                        <span class="font-tabular text-xs font-semibold text-success-700">
+                                            KES {{ number_format($product->pack_price_cents / 100, 2) }}
+                                        </span>
+                                    </button>
+                                @endif
+                            </div>
                         @empty
                             <p class="px-4 py-3 text-sm text-text-muted">No products match.</p>
                         @endforelse
@@ -129,7 +144,12 @@
             @forelse ($cart as $lineId => $line)
                 <div class="flex items-start justify-between gap-2 border-b border-surface-border py-3 last:border-0" wire:key="cart-line-{{ $lineId }}">
                     <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-medium text-text-primary">{{ $line['name'] }}</p>
+                        <p class="truncate text-sm font-medium text-text-primary">
+                            {{ $line['name'] }}
+                            @if ($line['is_pack'] ?? false)
+                                <x-badge variant="success" class="ml-1">Bulk</x-badge>
+                            @endif
+                        </p>
                         <p class="font-tabular text-xs text-text-muted">KES {{ number_format($line['unit_price_cents'] / 100, 2) }} / {{ $line['selling_unit'] ?? $line['base_unit'] }}</p>
 
                         <div

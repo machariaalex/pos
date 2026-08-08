@@ -24,7 +24,7 @@ class Pos extends Component
 {
     public string $search = '';
 
-    /** @var array<int, array{product_id:int,name:string,base_unit:string,selling_unit:string,units_per_base:string,quantity:string,unit_price_cents:int,discount_cents:int,allows_fractional:bool}> */
+    /** @var array<int, array{product_id:int,name:string,base_unit:string,selling_unit:string,units_per_base:string,quantity:string,unit_price_cents:int,discount_cents:int,allows_fractional:bool,is_pack:bool}> */
     public array $cart = [];
 
     public int $nextCartLineId = 1;
@@ -74,7 +74,7 @@ class Pos extends Component
         $product = Product::findOrFail($productId);
 
         foreach ($this->cart as $lineId => $line) {
-            if ($line['product_id'] === $productId) {
+            if ($line['product_id'] === $productId && ! $line['is_pack']) {
                 $increment = $product->allowsFractionalQuantity() ? '1' : '1';
                 $this->cart[$lineId]['quantity'] = bcadd($line['quantity'], $increment, 3);
                 $this->search = '';
@@ -93,6 +93,43 @@ class Pos extends Component
             'unit_price_cents' => $product->selling_price_cents,
             'discount_cents' => 0,
             'allows_fractional' => $product->allowsFractionalQuantity(),
+            'is_pack' => false,
+        ];
+        $this->nextCartLineId++;
+        $this->search = '';
+    }
+
+    /** Adds one whole bulk pack (e.g. a 50kg bag) at its discounted rate — a
+     * separate cart line from any loose/retail line for the same product,
+     * since the two have different per-unit prices (see Product::hasBulkPack()). */
+    public function addProductPack(int $productId): void
+    {
+        $product = Product::findOrFail($productId);
+
+        if (! $product->hasBulkPack()) {
+            return;
+        }
+
+        foreach ($this->cart as $lineId => $line) {
+            if ($line['product_id'] === $productId && $line['is_pack']) {
+                $this->cart[$lineId]['quantity'] = bcadd($line['quantity'], (string) $product->pack_size, 3);
+                $this->search = '';
+
+                return;
+            }
+        }
+
+        $this->cart[$this->nextCartLineId] = [
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'base_unit' => $product->base_unit,
+            'selling_unit' => $product->effectiveSellingUnit(),
+            'units_per_base' => $product->effectiveUnitsPerBase(),
+            'quantity' => (string) $product->pack_size,
+            'unit_price_cents' => $product->packUnitPriceCents(),
+            'discount_cents' => 0,
+            'allows_fractional' => $product->allowsFractionalQuantity(),
+            'is_pack' => true,
         ];
         $this->nextCartLineId++;
         $this->search = '';
@@ -171,6 +208,7 @@ class Pos extends Component
                 'unit_price_cents' => $lineData['unit_price_cents'],
                 'discount_cents' => $lineData['discount_cents'],
                 'allows_fractional' => $product?->allowsFractionalQuantity() ?? true,
+                'is_pack' => false,
             ];
             $this->nextCartLineId++;
         }

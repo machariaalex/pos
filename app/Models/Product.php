@@ -29,6 +29,8 @@ class Product extends Model
         'base_unit',
         'selling_unit',
         'units_per_base',
+        'pack_size',
+        'pack_price_cents',
         'buying_price_cents',
         'selling_price_cents',
         'reorder_level',
@@ -42,6 +44,8 @@ class Product extends Model
             'selling_price_cents' => 'integer',
             'reorder_level' => 'decimal:3',
             'units_per_base' => 'decimal:3',
+            'pack_size' => 'decimal:3',
+            'pack_price_cents' => 'integer',
             'is_active' => 'boolean',
         ];
     }
@@ -76,6 +80,26 @@ class Product extends Model
     public function allowsFractionalQuantity(): bool
     {
         return in_array($this->effectiveSellingUnit(), self::FRACTIONAL_UNITS, true);
+    }
+
+    /** Whether a discounted bulk-pack price (e.g. a whole 50kg bag) is configured. */
+    public function hasBulkPack(): bool
+    {
+        return $this->selling_unit !== null
+            && $this->pack_size !== null
+            && $this->pack_price_cents !== null;
+    }
+
+    /**
+     * Effective per-selling-unit price when bought as a whole pack.
+     * Exact only when pack_size evenly divides pack_price_cents — true for
+     * virtually every real pack size (e.g. a 50kg bag), so not worth the
+     * extra complexity of guaranteeing sub-cent-exact totals for the rare
+     * case it doesn't.
+     */
+    public function packUnitPriceCents(): int
+    {
+        return (int) round($this->pack_price_cents / (float) $this->pack_size);
     }
 
     public function stockOnHand(): string
