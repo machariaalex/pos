@@ -15,8 +15,12 @@ RUN apk add --no-cache \
     curl
 
 # PHP extensions needed for Laravel + SQLite (matches render.yaml's
-# DB_CONNECTION=sqlite — see the persistent disk mounted at /var/data)
-RUN docker-php-ext-install pdo pdo_sqlite opcache pcntl
+# DB_CONNECTION=sqlite — see the persistent disk mounted at /var/data).
+# bcmath is used throughout this app's money/quantity math (FEFO batch
+# allocation, sale totals, stock levels, credit ledgers — 36 call sites)
+# and was missing entirely, so every page touching a product or sale
+# 500'd the moment real data existed instead of an empty table.
+RUN docker-php-ext-install pdo pdo_sqlite opcache pcntl bcmath
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
