@@ -139,26 +139,29 @@ class UnitQuantityTest extends TestCase
         $this->assertFalse($product->fresh()->isLowStock());
     }
 
-    public function test_has_bulk_pack_requires_selling_unit_pack_size_and_pack_price(): void
+    public function test_has_bulk_pack_requires_only_pack_size_and_pack_price(): void
     {
+        // Deliberately independent of selling_unit — a product sold and
+        // stocked purely in kg (no unit conversion at all) can still offer
+        // bulk pricing without needing a fake base/selling-unit split.
         $category = Category::create(['name' => 'Feeds']);
         $base = [
             'category_id' => $category->id,
             'name' => 'Chick Mash',
-            'base_unit' => 'pcs',
+            'base_unit' => 'kg',
             'buying_price_cents' => 4000,
-            'selling_price_cents' => 60,
+            'selling_price_cents' => 6000,
             'reorder_level' => 1,
         ];
 
-        $noConversion = Product::create($base + ['name' => 'No conversion', 'pack_size' => 50, 'pack_price_cents' => 250000]);
-        $this->assertFalse($noConversion->hasBulkPack(), 'no selling_unit means no bulk pack, even with pack fields set');
-
-        $noPackFields = Product::create($base + ['name' => 'No pack fields', 'selling_unit' => 'kg', 'units_per_base' => 50]);
+        $noPackFields = Product::create($base + ['name' => 'No pack fields']);
         $this->assertFalse($noPackFields->hasBulkPack());
 
-        $full = Product::create($base + ['name' => 'Full config', 'selling_unit' => 'kg', 'units_per_base' => 50, 'pack_size' => 50, 'pack_price_cents' => 250000]);
-        $this->assertTrue($full->hasBulkPack());
+        $noConversionButBulk = Product::create($base + ['name' => 'Pure kg, bulk pricing', 'pack_size' => 50, 'pack_price_cents' => 500000]);
+        $this->assertTrue($noConversionButBulk->hasBulkPack(), 'bulk pack should work without any selling_unit conversion configured');
+
+        $withConversionAndBulk = Product::create($base + ['name' => 'Bags to kg, bulk pricing', 'base_unit' => 'pcs', 'selling_unit' => 'kg', 'units_per_base' => 50, 'pack_size' => 50, 'pack_price_cents' => 500000]);
+        $this->assertTrue($withConversionAndBulk->hasBulkPack());
     }
 
     public function test_pack_unit_price_cents_divides_pack_price_by_pack_size(): void

@@ -392,4 +392,46 @@ class PosTest extends TestCase
         // 55kg sold total / 50kg-per-bag = 1.1 bags deducted from the 3 in stock.
         $this->assertSame('1.900', (string) $batch->fresh()->quantity_remaining);
     }
+
+    public function test_bulk_pack_works_for_a_product_with_no_selling_unit_conversion(): void
+    {
+        // The exact real-world case that prompted this feature: chick mash
+        // stocked and sold purely in kg (no bags/base-unit split at all) at
+        // KES 120/kg retail, but KES 5,000 for a 50kg bulk quantity instead
+        // of 50 x 120 = 6,000.
+        $attendant = User::factory()->attendant()->create();
+        $product = Product::create([
+            'category_id' => $this->product->category_id,
+            'name' => 'Chick Mash',
+            'base_unit' => 'kg',
+            'pack_size' => 50,
+            'pack_price_cents' => 500000,
+            'buying_price_cents' => 8000,
+            'selling_price_cents' => 12000,
+            'reorder_level' => 1,
+        ]);
+        $batch = Batch::create([
+            'product_id' => $product->id, 'batch_number' => 'B1', 'expiry_date' => Carbon::now()->addMonths(6),
+            'quantity_received' => 100, 'quantity_remaining' => 100,
+            'buying_price_cents' => 8000, 'received_at' => Carbon::now(), 'created_by' => $attendant->id,
+        ]);
+
+        $component = Livewire::actingAs($attendant)
+            ->test(Pos::class)
+            ->call('addProductPack', $product->id);
+
+        $cart = $component->get('cart');
+        $line = reset($cart);
+        $this->assertSame('50.000', $line['quantity']);
+        $this->assertSame(10000, $line['unit_price_cents']); // KES 100/kg, not 120
+
+        $component
+            ->call('addPayment', 'cash')
+            ->set('payments.0.amount', '5000.00')
+            ->call('completeSale');
+
+        $sale = Sale::latest()->first();
+        $this->assertSame(500000, $sale->total_cents);
+        $this->assertSame('50.000', (string) $batch->fresh()->quantity_remaining);
+    }
 }

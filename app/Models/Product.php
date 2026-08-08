@@ -82,12 +82,16 @@ class Product extends Model
         return in_array($this->effectiveSellingUnit(), self::FRACTIONAL_UNITS, true);
     }
 
-    /** Whether a discounted bulk-pack price (e.g. a whole 50kg bag) is configured. */
+    /**
+     * Whether a discounted bulk-pack price is configured — independent of
+     * whether the product also uses a separate selling_unit. A product sold
+     * and stocked purely in kg can still offer "buy 50kg for less per kg"
+     * without needing a fake base/selling-unit conversion just to unlock it.
+     * pack_size is expressed in effectiveSellingUnit() either way.
+     */
     public function hasBulkPack(): bool
     {
-        return $this->selling_unit !== null
-            && $this->pack_size !== null
-            && $this->pack_price_cents !== null;
+        return $this->pack_size !== null && $this->pack_price_cents !== null;
     }
 
     /**

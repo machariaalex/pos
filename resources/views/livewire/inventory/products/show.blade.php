@@ -10,7 +10,7 @@
                     {{ $product->category->name }} &middot; sold per {{ $product->base_unit }}
                     @if ($product->barcode) &middot; <span class="font-tabular">{{ $product->barcode }}</span> @endif
                     @if ($product->hasBulkPack())
-                        &middot; <span class="font-tabular text-success-700">Bulk: {{ number_format($product->pack_size, 0) }} {{ $product->selling_unit }} @ KES {{ number_format($product->pack_price_cents / 100, 2) }}</span>
+                        &middot; <span class="font-tabular text-success-700">Bulk: {{ number_format($product->pack_size, 0) }} {{ $product->effectiveSellingUnit() }} @ KES {{ number_format($product->pack_price_cents / 100, 2) }}</span>
                     @endif
                 </p>
             </div>

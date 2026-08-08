@@ -171,25 +171,26 @@
                             @error('unitsPerBase') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
+                @endif
 
-                    <label class="flex items-center gap-2 text-sm text-text-secondary">
-                        <input type="checkbox" wire:model.live="hasBulkPack" class="rounded border-surface-border text-primary-700 focus:ring-primary-600">
-                        Offer a discounted bulk pack (e.g. a whole 50kg bag)
-                    </label>
-                    @if ($hasBulkPack)
-                        <div class="grid grid-cols-2 gap-4 rounded-lg border border-surface-border bg-surface-muted p-3">
-                            <div>
-                                <label class="mb-1 block text-sm font-medium text-text-secondary">Pack size ({{ $sellingUnit ?: 'units' }})</label>
-                                <input type="number" step="0.001" min="0.001" wire:model="packSize" class="font-tabular w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600" placeholder="e.g. 50">
-                                @error('packSize') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-sm font-medium text-text-secondary">Pack price (KES)</label>
-                                <input type="number" step="0.01" min="0.01" wire:model="packPrice" class="font-tabular w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600" placeholder="e.g. 2500">
-                                @error('packPrice') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
-                            </div>
+                @php $effectiveUnit = ($hasSellingUnit && $sellingUnit) ? $sellingUnit : $baseUnit; @endphp
+                <label class="flex items-center gap-2 text-sm text-text-secondary">
+                    <input type="checkbox" wire:model.live="hasBulkPack" class="rounded border-surface-border text-primary-700 focus:ring-primary-600">
+                    Offer a discounted bulk pack (e.g. buy 50kg for less per kg)
+                </label>
+                @if ($hasBulkPack)
+                    <div class="grid grid-cols-2 gap-4 rounded-lg border border-surface-border bg-surface-muted p-3">
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-text-secondary">Pack size ({{ $effectiveUnit }})</label>
+                            <input type="number" step="0.001" min="0.001" wire:model="packSize" class="font-tabular w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600" placeholder="e.g. 50">
+                            @error('packSize') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
                         </div>
-                    @endif
+                        <div>
+                            <label class="mb-1 block text-sm font-medium text-text-secondary">Pack price (KES)</label>
+                            <input type="number" step="0.01" min="0.01" wire:model="packPrice" class="font-tabular w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600" placeholder="e.g. 2500">
+                            @error('packPrice') <p class="mt-1 text-sm text-danger-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
                 @endif
                 <div class="grid grid-cols-2 gap-4">
                     @can('view-buying-price')

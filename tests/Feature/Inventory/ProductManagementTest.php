@@ -286,8 +286,10 @@ class ProductManagementTest extends TestCase
         ]);
     }
 
-    public function test_bulk_pack_requires_a_selling_unit_to_be_configured(): void
+    public function test_bulk_pack_works_without_a_selling_unit_configured(): void
     {
+        // A product sold and stocked purely in kg (no unit conversion) can
+        // still offer bulk pricing — the toggle doesn't require hasSellingUnit.
         $manager = User::factory()->manager()->create();
 
         Livewire::actingAs($manager)
@@ -295,22 +297,22 @@ class ProductManagementTest extends TestCase
             ->call('startCreate')
             ->set('name', 'Chick Mash')
             ->set('categoryId', $this->category->id)
-            ->set('baseUnit', 'pcs')
+            ->set('baseUnit', 'kg')
             ->set('hasSellingUnit', false)
             ->set('hasBulkPack', true)
             ->set('packSize', '50')
-            ->set('packPrice', '2500')
+            ->set('packPrice', '5000')
             ->set('buyingPrice', '40')
             ->set('sellingPrice', '60')
             ->set('reorderLevel', '1')
-            ->call('save');
+            ->call('save')
+            ->assertHasNoErrors();
 
-        // Without hasSellingUnit the bulk-pack toggle never renders, so the
-        // component's own validation must not require pack fields either.
         $this->assertDatabaseHas('products', [
             'name' => 'Chick Mash',
-            'pack_size' => null,
-            'pack_price_cents' => null,
+            'selling_unit' => null,
+            'pack_size' => 50,
+            'pack_price_cents' => 500000,
         ]);
     }
 }

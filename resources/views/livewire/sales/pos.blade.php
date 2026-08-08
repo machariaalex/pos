@@ -49,7 +49,7 @@
                                         class="flex w-full items-center justify-between gap-3 bg-success-50 px-4 py-2 text-left hover:bg-success-100"
                                     >
                                         <span class="text-xs font-medium text-success-700">
-                                            + Add 1 bulk pack — {{ number_format($product->pack_size, 0) }} {{ $product->selling_unit }}
+                                            + Add 1 bulk pack — {{ number_format($product->pack_size, 0) }} {{ $product->effectiveSellingUnit() }}
                                         </span>
                                         <span class="font-tabular text-xs font-semibold text-success-700">
                                             KES {{ number_format($product->pack_price_cents / 100, 2) }}
