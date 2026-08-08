@@ -187,7 +187,7 @@
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    value="{{ number_format($line['discount_cents'] / 100, 2, '.', '') }}"
+                                    value="{{ $line['discount_cents'] === 0 ? '0' : number_format($line['discount_cents'] / 100, 2, '.', '') }}"
                                     wire:change="updateLineDiscount({{ $lineId }}, $event.target.value)"
                                     class="h-8 w-20 rounded-lg border border-surface-border px-2 text-sm"
                                 >

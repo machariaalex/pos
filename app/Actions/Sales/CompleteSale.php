@@ -96,7 +96,7 @@ class CompleteSale
         foreach ($lines as $lineData) {
             $discountCents = (int) ($lineData['discount_cents'] ?? 0);
 
-            if ($discountCents > 0 && ! $cashier->canApprove()) {
+            if ($discountCents > 0 && ! $cashier->canApprove() && ! $cashier->hasPermission('apply-discount')) {
                 throw new InvalidArgumentException('Discounts require manager or owner authorization.');
             }
 

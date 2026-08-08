@@ -259,6 +259,28 @@ class CompleteSaleTest extends CompleteSaleTestBase
         );
     }
 
+    public function test_discount_by_attendant_with_granted_permission_is_applied_to_total(): void
+    {
+        // CompleteSale must honor the owner-configurable apply-discount
+        // permission, not just the role-based canApprove() check — the
+        // Sell screen's Gate::allows('apply-discount') already lets a
+        // permitted attendant enter a discount, so this action-layer check
+        // must agree or checkout rejects a discount the UI just allowed.
+        $attendant = User::factory()->attendant()->create(['permissions' => ['apply-discount']]);
+        $product = $this->makeProduct(['selling_price_cents' => 10000]);
+        $this->makeBatch($product, $attendant);
+
+        $sale = $this->complete(
+            lines: [['product_id' => $product->id, 'quantity' => '1', 'unit_price_cents' => 10000, 'discount_cents' => 1000]],
+            customer: null,
+            payments: [['method' => Payment::METHOD_CASH, 'amount_cents' => 9000]],
+            cashier: $attendant,
+        );
+
+        $this->assertSame(1000, $sale->discount_cents);
+        $this->assertSame(9000, $sale->total_cents);
+    }
+
     public function test_discount_by_manager_is_applied_to_total(): void
     {
         $manager = User::factory()->manager()->create();
