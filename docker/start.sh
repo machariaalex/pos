@@ -26,8 +26,8 @@ chown -R www-data:www-data "${DATA_DIR}"
 echo "Running migrations..."
 php artisan migrate --force
 
-echo "Seeding users..."
-php artisan db:seed --class=UserSeeder --force
+echo "Seeding initial users (only if the database is empty)..."
+php artisan app:seed-initial-users
 
 echo "Caching config, routes, views..."
 php artisan config:cache
