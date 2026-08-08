@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     nodejs \
     npm \
     sqlite-dev \
+    dcron \
     git \
     zip \
     unzip \
@@ -37,6 +38,12 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
+
+# Daily backup: Render's persistent disk is only mountable by this one web
+# service, so a separate Cron Job service can't reach the SQLite file — the
+# schedule has to run inside this same container instead. crond reads this
+# crontab directly; nothing in Laravel needs to trigger it.
+COPY docker/crontab /etc/crontabs/root
 
 EXPOSE 10000
 

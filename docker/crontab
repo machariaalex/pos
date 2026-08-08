@@ -1,0 +1,1 @@
+0 2 * * * cd /var/www/html && php artisan backup:database >> /var/data/logs/backup.log 2>&1
