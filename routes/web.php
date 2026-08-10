@@ -16,6 +16,7 @@ use App\Livewire\Inventory\Products\Show as ProductShow;
 use App\Livewire\Inventory\ReceiveStock\Index as ReceiveStockIndex;
 use App\Livewire\Inventory\StockTakes\Index as StockTakesIndex;
 use App\Livewire\Inventory\StockTakes\Show as StockTakeShow;
+use App\Livewire\Reports\ExpensesReport;
 use App\Livewire\Reports\ExpiryReport;
 use App\Livewire\Reports\FastSlowMovers;
 use App\Livewire\Reports\Index as ReportsIndex;
@@ -73,6 +74,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/stock-valuation', StockValuation::class)->name('stock-valuation');
         Route::get('/fast-slow-movers', FastSlowMovers::class)->name('fast-slow-movers');
         Route::get('/expiry', ExpiryReport::class)->name('expiry');
+        Route::get('/expenses', ExpensesReport::class)->name('expenses');
     });
 
     Route::prefix('expenses')->name('expenses.')->group(function () {

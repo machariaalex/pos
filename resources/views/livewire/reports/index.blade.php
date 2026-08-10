@@ -54,6 +54,16 @@
             <p class="mt-1 text-sm text-text-muted">Full expired and expiring-soon batch list.</p>
         </a>
 
+        @can('manage-expenses')
+            <a href="{{ route('reports.expenses') }}" class="group rounded-card border border-surface-border bg-surface-card p-5 shadow-sm transition-all hover:border-primary-700/40 hover:shadow-md">
+                <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-danger-100 text-danger-600">
+                    <x-heroicon-o-arrow-trending-down class="h-5 w-5" />
+                </div>
+                <h2 class="font-semibold text-text-primary group-hover:text-primary-700">Expenses</h2>
+                <p class="mt-1 text-sm text-text-muted">By date range, or broken down by category.</p>
+            </a>
+        @endcan
+
         <a href="{{ route('cash-up.index') }}" class="group rounded-card border border-surface-border bg-surface-card p-5 shadow-sm transition-all hover:border-primary-700/40 hover:shadow-md">
             <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700">
                 <x-heroicon-o-banknotes class="h-5 w-5" />

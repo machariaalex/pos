@@ -2,10 +2,16 @@
     <div class="min-w-0 flex-1">
         <div class="mb-4 flex items-center justify-between">
             <h1 class="text-2xl font-semibold text-text-primary">Expenses</h1>
-            <a href="{{ route('expenses.categories.index') }}" class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">
-                <x-heroicon-o-tag class="h-4 w-4" />
-                Categories
-            </a>
+            <div class="flex items-center gap-4">
+                <a href="{{ route('reports.expenses') }}" class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">
+                    <x-heroicon-o-chart-bar class="h-4 w-4" />
+                    Report
+                </a>
+                <a href="{{ route('expenses.categories.index') }}" class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline">
+                    <x-heroicon-o-tag class="h-4 w-4" />
+                    Categories
+                </a>
+            </div>
         </div>
 
         <x-card>
