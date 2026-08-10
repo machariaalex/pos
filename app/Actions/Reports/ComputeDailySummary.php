@@ -17,7 +17,7 @@ class ComputeDailySummary
      *
      * @return array{
      *     date: string, transaction_count: int, gross_sales_cents: int,
-     *     returns_cents: int, net_revenue_cents: int,
+     *     returns_cents: int, net_revenue_cents: int, discount_cents: int,
      *     by_payment_method: array<string,int>, cash_expected_cents: int,
      *     cogs_cents: int, profit_cents: int,
      * }
@@ -59,6 +59,7 @@ class ComputeDailySummary
             'gross_sales_cents' => $grossSales,
             'returns_cents' => $returnsTotal,
             'net_revenue_cents' => $netRevenue,
+            'discount_cents' => $sales->sum('discount_cents'),
             'by_payment_method' => $byMethod,
             // A credit-financed sale's return is a ledger credit note, not
             // cash out of the drawer — every other refund is assumed cash.

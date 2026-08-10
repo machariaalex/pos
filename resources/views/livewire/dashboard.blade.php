@@ -46,6 +46,12 @@
             label="Credit"
             value="KES {{ number_format($summary['by_payment_method']['credit'] / 100, 2) }}"
         />
+        <x-stat-card
+            icon="receipt-percent"
+            variant="{{ $summary['discount_cents'] > 0 ? 'warn' : 'primary' }}"
+            label="Discounts today"
+            value="KES {{ number_format($summary['discount_cents'] / 100, 2) }}"
+        />
         @can('view-reports')
             <x-stat-card
                 icon="exclamation-circle"

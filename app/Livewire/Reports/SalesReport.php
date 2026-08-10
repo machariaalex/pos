@@ -41,6 +41,7 @@ class SalesReport extends Component
         $totals = [
             'total_cents' => $sales->sum('total_cents'),
             'transaction_count' => $sales->count(),
+            'discount_cents' => $sales->sum('discount_cents'),
         ];
 
         $breakdown = match ($this->groupBy) {
@@ -72,6 +73,7 @@ class SalesReport extends Component
                 'products.selling_unit',
                 DB::raw('sum(sale_lines.quantity) as total_quantity'),
                 DB::raw('sum(sale_lines.line_total_cents) as total_cents'),
+                DB::raw('sum(sale_lines.discount_cents) as discount_cents'),
             ]);
     }
 
@@ -89,6 +91,7 @@ class SalesReport extends Component
             ->get([
                 'categories.name',
                 DB::raw('sum(sale_lines.line_total_cents) as total_cents'),
+                DB::raw('sum(sale_lines.discount_cents) as discount_cents'),
             ]);
     }
 
@@ -105,6 +108,7 @@ class SalesReport extends Component
                 'users.name',
                 DB::raw('count(sales.id) as transaction_count'),
                 DB::raw('sum(sales.total_cents) as total_cents'),
+                DB::raw('sum(sales.discount_cents) as discount_cents'),
             ]);
     }
 }

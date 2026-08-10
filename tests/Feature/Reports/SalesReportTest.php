@@ -44,6 +44,35 @@ class SalesReportTest extends TestCase
             ->assertSee('195.00');
     }
 
+    public function test_discounts_are_shown_in_totals_and_product_breakdown(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $category = Category::create(['name' => 'Feeds']);
+        $product = Product::create([
+            'category_id' => $category->id, 'name' => 'Dairy Meal', 'base_unit' => 'kg',
+            'buying_price_cents' => 5000, 'selling_price_cents' => 6500, 'reorder_level' => 10,
+        ]);
+        Batch::create([
+            'product_id' => $product->id, 'batch_number' => 'B1', 'expiry_date' => null,
+            'quantity_received' => 100, 'quantity_remaining' => 100,
+            'buying_price_cents' => 5000, 'received_at' => Carbon::now(), 'created_by' => $manager->id,
+        ]);
+
+        // Sells for 3 * 6500 = 19500, with a 1000 discount granted at checkout.
+        app(CompleteSale::class)(
+            [['product_id' => $product->id, 'quantity' => '3', 'unit_price_cents' => 6500, 'discount_cents' => 1000]],
+            null, [['method' => Payment::METHOD_CASH, 'amount_cents' => 18500]], $manager,
+        );
+
+        Livewire::actingAs($manager)
+            ->test(SalesReport::class)
+            ->assertSee('Discounts given')
+            ->assertSee('10.00') // totals discount card, KES 10.00
+            ->set('groupBy', 'product')
+            ->assertSee('Dairy Meal')
+            ->assertSee('10.00'); // per-product discount column
+    }
+
     public function test_totals_reflect_the_selected_date_range(): void
     {
         $manager = User::factory()->manager()->create();

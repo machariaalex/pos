@@ -27,7 +27,7 @@
         </div>
     </div>
 
-    <div class="mb-6 grid grid-cols-2 gap-4">
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <x-stat-card
             icon="shopping-bag"
             variant="primary"
@@ -40,6 +40,12 @@
             label="Transactions"
             :value="$totals['transaction_count']"
         />
+        <x-stat-card
+            icon="receipt-percent"
+            variant="{{ $totals['discount_cents'] > 0 ? 'warn' : 'primary' }}"
+            label="Discounts given"
+            :value="'KES '.number_format($totals['discount_cents'] / 100, 2)"
+        />
     </div>
 
     @if ($groupBy !== 'none')
@@ -49,13 +55,16 @@
                     @if ($groupBy === 'product')
                         <x-table.th>Product</x-table.th>
                         <x-table.th align="right">Quantity sold</x-table.th>
+                        <x-table.th align="right">Discount</x-table.th>
                         <x-table.th align="right">Revenue</x-table.th>
                     @elseif ($groupBy === 'category')
                         <x-table.th>Category</x-table.th>
+                        <x-table.th align="right">Discount</x-table.th>
                         <x-table.th align="right">Revenue</x-table.th>
                     @elseif ($groupBy === 'attendant')
                         <x-table.th>Attendant</x-table.th>
                         <x-table.th align="right">Transactions</x-table.th>
+                        <x-table.th align="right">Discount</x-table.th>
                         <x-table.th align="right">Revenue</x-table.th>
                     @endif
                 </tr>
@@ -69,10 +78,16 @@
                                 <span class="font-tabular text-text-secondary">{{ $row->total_quantity }} {{ $row->selling_unit ?? $row->base_unit }}</span>
                             </x-table.td>
                             <x-table.td align="right">
+                                <span class="font-tabular {{ $row->discount_cents > 0 ? 'text-warn-600' : 'text-text-muted' }}">{{ number_format($row->discount_cents / 100, 2) }}</span>
+                            </x-table.td>
+                            <x-table.td align="right">
                                 <span class="font-tabular font-semibold text-text-primary">{{ number_format($row->total_cents / 100, 2) }}</span>
                             </x-table.td>
                         @elseif ($groupBy === 'category')
                             <x-table.td>{{ $row->name }}</x-table.td>
+                            <x-table.td align="right">
+                                <span class="font-tabular {{ $row->discount_cents > 0 ? 'text-warn-600' : 'text-text-muted' }}">{{ number_format($row->discount_cents / 100, 2) }}</span>
+                            </x-table.td>
                             <x-table.td align="right">
                                 <span class="font-tabular font-semibold text-text-primary">{{ number_format($row->total_cents / 100, 2) }}</span>
                             </x-table.td>
@@ -82,13 +97,16 @@
                                 <span class="font-tabular text-text-secondary">{{ $row->transaction_count }}</span>
                             </x-table.td>
                             <x-table.td align="right">
+                                <span class="font-tabular {{ $row->discount_cents > 0 ? 'text-warn-600' : 'text-text-muted' }}">{{ number_format($row->discount_cents / 100, 2) }}</span>
+                            </x-table.td>
+                            <x-table.td align="right">
                                 <span class="font-tabular font-semibold text-text-primary">{{ number_format($row->total_cents / 100, 2) }}</span>
                             </x-table.td>
                         @endif
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3">
+                        <td colspan="4">
                             <x-empty-state icon="chart-bar" title="No sales in this range" description="Try adjusting the date range." />
                         </td>
                     </tr>

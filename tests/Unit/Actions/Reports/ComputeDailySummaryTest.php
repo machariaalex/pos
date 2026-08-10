@@ -178,6 +178,26 @@ class ComputeDailySummaryTest extends ReportsActionTestCase
         $this->assertSame(4500, $summary['profit_cents']); // 19500 - 15000
     }
 
+    public function test_discount_cents_sums_discounts_from_completed_sales(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $product = $this->makeProduct(['selling_price_cents' => 6500]);
+        $this->makeBatch($product, $manager);
+        $today = Carbon::today();
+
+        $this->completeSale(
+            [['product_id' => $product->id, 'quantity' => '2', 'unit_price_cents' => 6500, 'discount_cents' => 1000]],
+            null,
+            [['method' => Payment::METHOD_CASH, 'amount_cents' => 12000]],
+            $manager,
+            $today,
+        );
+
+        $summary = (new ComputeDailySummary)($today);
+
+        $this->assertSame(1000, $summary['discount_cents']);
+    }
+
     public function test_summary_can_be_scoped_to_a_single_attendant(): void
     {
         $alice = User::factory()->attendant()->create();
