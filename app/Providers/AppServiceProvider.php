@@ -35,5 +35,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-credit-limit', fn (User $user) => $user->canApprove() || $user->hasPermission('manage-credit-limit'));
         Gate::define('view-audit-log', fn (User $user) => $user->isOwner() || $user->hasPermission('view-audit-log'));
         Gate::define('view-reports', fn (User $user) => $user->canApprove() || $user->hasPermission('view-reports'));
+        Gate::define('manage-expenses', fn (User $user) => $user->canApprove() || $user->hasPermission('manage-expenses'));
     }
 }

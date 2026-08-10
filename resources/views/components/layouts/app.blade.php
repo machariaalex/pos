@@ -53,6 +53,9 @@
             @can('view-reports')
                 <x-nav-item :route="route('reports.index')" :active="request()->routeIs('reports.*')" icon="chart-bar">Reports</x-nav-item>
             @endcan
+            @can('manage-expenses')
+                <x-nav-item :route="route('expenses.index')" :active="request()->routeIs('expenses.*')" icon="arrow-trending-down">Expenses</x-nav-item>
+            @endcan
             <x-nav-item :route="route('cash-up.index')" :active="request()->routeIs('cash-up.*')" icon="banknotes">Cash-up</x-nav-item>
             @can('view-audit-log')
                 <x-nav-item :route="route('audit-log.index')" :active="request()->routeIs('audit-log.*')" icon="shield-check">Audit Log</x-nav-item>

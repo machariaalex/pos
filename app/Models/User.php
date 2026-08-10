@@ -36,6 +36,7 @@ class User extends Authenticatable
         'view-reports' => 'View reports',
         'view-audit-log' => 'View audit log',
         'manage-users' => 'Manage other users & permissions',
+        'manage-expenses' => 'Record & manage expenses',
     ];
 
     protected $fillable = [

@@ -74,13 +74,24 @@
     </div>
 
     @can('view-profit')
-        <div class="mb-6">
+        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <x-stat-card
                 icon="chart-pie"
                 variant="{{ $summary['profit_cents'] >= 0 ? 'success' : 'danger' }}"
-                label="Profit today"
+                label="Gross profit today"
                 value="KES {{ number_format($summary['profit_cents'] / 100, 2) }}"
-                class="max-w-xs"
+            />
+            <x-stat-card
+                icon="arrow-trending-down"
+                variant="{{ $summary['expenses_cents'] > 0 ? 'warn' : 'primary' }}"
+                label="Expenses today"
+                value="KES {{ number_format($summary['expenses_cents'] / 100, 2) }}"
+            />
+            <x-stat-card
+                icon="banknotes"
+                variant="{{ $summary['net_profit_cents'] >= 0 ? 'success' : 'danger' }}"
+                label="Net profit today"
+                value="KES {{ number_format($summary['net_profit_cents'] / 100, 2) }}"
             />
         </div>
     @endcan

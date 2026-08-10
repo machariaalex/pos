@@ -8,6 +8,8 @@ use App\Livewire\Customers\DebtorsReport;
 use App\Livewire\Customers\Index as CustomersIndex;
 use App\Livewire\Customers\Show as CustomerShow;
 use App\Livewire\Dashboard;
+use App\Livewire\Expenses\Categories\Index as ExpenseCategoriesIndex;
+use App\Livewire\Expenses\Index as ExpensesIndex;
 use App\Livewire\Inventory\Categories\Index as CategoriesIndex;
 use App\Livewire\Inventory\Products\Index as ProductsIndex;
 use App\Livewire\Inventory\Products\Show as ProductShow;
@@ -71,6 +73,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/stock-valuation', StockValuation::class)->name('stock-valuation');
         Route::get('/fast-slow-movers', FastSlowMovers::class)->name('fast-slow-movers');
         Route::get('/expiry', ExpiryReport::class)->name('expiry');
+    });
+
+    Route::prefix('expenses')->name('expenses.')->group(function () {
+        Route::get('/', ExpensesIndex::class)->name('index');
+        Route::get('/categories', ExpenseCategoriesIndex::class)->name('categories.index');
     });
 
     Route::get('/cash-up', CashUpIndex::class)->name('cash-up.index');

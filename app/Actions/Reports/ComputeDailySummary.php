@@ -19,7 +19,8 @@ class ComputeDailySummary
      *     date: string, transaction_count: int, gross_sales_cents: int,
      *     returns_cents: int, net_revenue_cents: int, discount_cents: int,
      *     by_payment_method: array<string,int>, cash_expected_cents: int,
-     *     cogs_cents: int, profit_cents: int,
+     *     cogs_cents: int, profit_cents: int, expenses_cents: int,
+     *     net_profit_cents: int,
      * }
      */
     public function __invoke(Carbon $date, ?User $attendant = null): array
@@ -52,6 +53,8 @@ class ComputeDailySummary
 
         $netRevenue = $grossSales - $returnsTotal;
         $netCogs = $cogs - $returnsCogs;
+        $profit = $netRevenue - $netCogs;
+        $expenses = (new ComputeExpensesForRange)($date, $date);
 
         return [
             'date' => $date->toDateString(),
@@ -65,7 +68,9 @@ class ComputeDailySummary
             // cash out of the drawer — every other refund is assumed cash.
             'cash_expected_cents' => $byMethod[Payment::METHOD_CASH] - $cashRefunds,
             'cogs_cents' => $netCogs,
-            'profit_cents' => $netRevenue - $netCogs,
+            'profit_cents' => $profit,
+            'expenses_cents' => $expenses,
+            'net_profit_cents' => $profit - $expenses,
         ];
     }
 

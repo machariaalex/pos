@@ -3,6 +3,8 @@
 namespace Tests\Unit\Actions\Reports;
 
 use App\Actions\Reports\ComputeDailySummary;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\User;
@@ -196,6 +198,52 @@ class ComputeDailySummaryTest extends ReportsActionTestCase
         $summary = (new ComputeDailySummary)($today);
 
         $this->assertSame(1000, $summary['discount_cents']);
+    }
+
+    public function test_net_profit_subtracts_todays_expenses_from_gross_profit(): void
+    {
+        $user = User::factory()->attendant()->create();
+        $manager = User::factory()->manager()->create();
+        $product = $this->makeProduct(['buying_price_cents' => 5000, 'selling_price_cents' => 6500]);
+        $this->makeBatch($product, $user);
+        $today = Carbon::today();
+        $category = ExpenseCategory::create(['name' => 'Rent']);
+
+        $this->completeSale(
+            [['product_id' => $product->id, 'quantity' => '2', 'unit_price_cents' => 6500]],
+            null,
+            [['method' => Payment::METHOD_CASH, 'amount_cents' => 13000]],
+            $user,
+            $today,
+        );
+        Expense::create([
+            'expense_category_id' => $category->id,
+            'amount_cents' => 1000,
+            'incurred_on' => $today,
+            'created_by' => $manager->id,
+        ]);
+
+        $summary = (new ComputeDailySummary)($today);
+
+        $this->assertSame(3000, $summary['profit_cents']); // 13000 - 10000 cogs
+        $this->assertSame(1000, $summary['expenses_cents']);
+        $this->assertSame(2000, $summary['net_profit_cents']); // 3000 - 1000
+    }
+
+    public function test_expenses_on_a_different_day_are_excluded_from_todays_summary(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $category = ExpenseCategory::create(['name' => 'Rent']);
+        Expense::create([
+            'expense_category_id' => $category->id,
+            'amount_cents' => 1000,
+            'incurred_on' => Carbon::yesterday(),
+            'created_by' => $manager->id,
+        ]);
+
+        $summary = (new ComputeDailySummary)(Carbon::today());
+
+        $this->assertSame(0, $summary['expenses_cents']);
     }
 
     public function test_summary_can_be_scoped_to_a_single_attendant(): void

@@ -3,6 +3,8 @@
 namespace Tests\Unit\Actions\Reports;
 
 use App\Actions\Reports\ComputeProfitForRange;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -87,5 +89,64 @@ class ComputeProfitForRangeTest extends ReportsActionTestCase
 
         $this->assertSame(0, $result['revenue_cents']);
         $this->assertSame(0.0, $result['margin_percent']);
+    }
+
+    public function test_net_profit_subtracts_expenses_incurred_in_range(): void
+    {
+        $user = User::factory()->attendant()->create();
+        $manager = User::factory()->manager()->create();
+        $product = $this->makeProduct(['buying_price_cents' => 5000, 'selling_price_cents' => 10000]);
+        $this->makeBatch($product, $user);
+        $category = ExpenseCategory::create(['name' => 'Rent']);
+
+        $this->completeSale(
+            [['product_id' => $product->id, 'quantity' => '1', 'unit_price_cents' => 10000]],
+            null, [['method' => Payment::METHOD_CASH, 'amount_cents' => 10000]], $user, Carbon::today(),
+        );
+        Expense::create([
+            'expense_category_id' => $category->id,
+            'amount_cents' => 2000,
+            'incurred_on' => Carbon::today(),
+            'created_by' => $manager->id,
+        ]);
+
+        $result = (new ComputeProfitForRange)(Carbon::today()->subDays(7), Carbon::today());
+
+        $this->assertSame(5000, $result['profit_cents']); // 10000 - 5000 cogs
+        $this->assertSame(2000, $result['expenses_cents']);
+        $this->assertSame(3000, $result['net_profit_cents']); // 5000 - 2000
+    }
+
+    public function test_expenses_outside_range_are_excluded(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $category = ExpenseCategory::create(['name' => 'Rent']);
+        Expense::create([
+            'expense_category_id' => $category->id,
+            'amount_cents' => 2000,
+            'incurred_on' => Carbon::today()->subDays(40),
+            'created_by' => $manager->id,
+        ]);
+
+        $result = (new ComputeProfitForRange)(Carbon::today()->subDays(29), Carbon::today());
+
+        $this->assertSame(0, $result['expenses_cents']);
+    }
+
+    public function test_net_profit_equals_gross_profit_when_there_are_no_expenses(): void
+    {
+        $user = User::factory()->attendant()->create();
+        $product = $this->makeProduct(['buying_price_cents' => 5000, 'selling_price_cents' => 10000]);
+        $this->makeBatch($product, $user);
+
+        $this->completeSale(
+            [['product_id' => $product->id, 'quantity' => '1', 'unit_price_cents' => 10000]],
+            null, [['method' => Payment::METHOD_CASH, 'amount_cents' => 10000]], $user, Carbon::today(),
+        );
+
+        $result = (new ComputeProfitForRange)(Carbon::today(), Carbon::today());
+
+        $this->assertSame(0, $result['expenses_cents']);
+        $this->assertSame($result['profit_cents'], $result['net_profit_cents']);
     }
 }

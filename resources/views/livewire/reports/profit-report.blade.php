@@ -5,7 +5,7 @@
             Reports
         </a>
         <h1 class="mt-1 text-2xl font-semibold text-text-primary">Profit report</h1>
-        <p class="text-sm text-text-muted">Owner only &mdash; revenue minus cost of goods sold, net of returns.</p>
+        <p class="text-sm text-text-muted">Gross profit is revenue minus cost of goods sold, net of returns. Net profit also subtracts expenses.</p>
     </div>
 
     <div class="mb-6 flex flex-wrap items-end gap-4">
@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <x-stat-card
             icon="banknotes"
             variant="primary"
@@ -33,16 +33,28 @@
             :value="'KES '.number_format($cogs_cents / 100, 2)"
         />
         <x-stat-card
-            icon="currency-dollar"
-            :variant="$profit_cents >= 0 ? 'success' : 'danger'"
-            label="Profit"
-            :value="'KES '.number_format($profit_cents / 100, 2)"
-        />
-        <x-stat-card
             icon="percent-badge"
             variant="info"
             label="Margin"
             :value="$margin_percent.'%'"
+        />
+        <x-stat-card
+            icon="currency-dollar"
+            :variant="$profit_cents >= 0 ? 'success' : 'danger'"
+            label="Gross profit"
+            :value="'KES '.number_format($profit_cents / 100, 2)"
+        />
+        <x-stat-card
+            icon="arrow-trending-down"
+            :variant="$expenses_cents > 0 ? 'warn' : 'primary'"
+            label="Expenses"
+            :value="'KES '.number_format($expenses_cents / 100, 2)"
+        />
+        <x-stat-card
+            icon="banknotes"
+            :variant="$net_profit_cents >= 0 ? 'success' : 'danger'"
+            label="Net profit"
+            :value="'KES '.number_format($net_profit_cents / 100, 2)"
         />
     </div>
 </div>

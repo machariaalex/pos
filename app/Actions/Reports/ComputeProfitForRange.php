@@ -14,7 +14,7 @@ class ComputeProfitForRange
      * ComputeDailySummary — a return doesn't just cut revenue, it also
      * gives back the cost of the returned goods).
      *
-     * @return array{revenue_cents: int, cogs_cents: int, profit_cents: int, margin_percent: float}
+     * @return array{revenue_cents: int, cogs_cents: int, profit_cents: int, margin_percent: float, expenses_cents: int, net_profit_cents: int}
      */
     public function __invoke(Carbon $from, Carbon $to): array
     {
@@ -49,12 +49,15 @@ class ComputeProfitForRange
         $revenue = $grossRevenue - $returnsTotal;
         $cogs = $grossCogs - $returnsCogs;
         $profit = $revenue - $cogs;
+        $expenses = (new ComputeExpensesForRange)($from, $to);
 
         return [
             'revenue_cents' => $revenue,
             'cogs_cents' => $cogs,
             'profit_cents' => $profit,
             'margin_percent' => $revenue > 0 ? round(($profit / $revenue) * 100, 1) : 0.0,
+            'expenses_cents' => $expenses,
+            'net_profit_cents' => $profit - $expenses,
         ];
     }
 }
