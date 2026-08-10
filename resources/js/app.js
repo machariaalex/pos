@@ -1,5 +1,14 @@
 import './bootstrap';
 
+// Registers the app-shell service worker (see public/sw.js) so the app is
+// installable and static assets survive brief connection drops. Livewire
+// requests are never intercepted — this doesn't enable offline sales.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+    });
+}
+
 import {
     Chart,
     BarController,
