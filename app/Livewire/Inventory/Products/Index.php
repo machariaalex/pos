@@ -144,7 +144,7 @@ class Index extends Component
             'unitsPerBase' => [$this->hasSellingUnit ? 'required' : 'nullable', 'numeric', 'gt:0'],
             'packSize' => [$this->hasBulkPack ? 'required' : 'nullable', 'numeric', 'gt:0'],
             'packPrice' => [$this->hasBulkPack ? 'required' : 'nullable', 'numeric', 'gt:0'],
-            'buyingPrice' => [$canSeeBuyingPrice ? 'required' : 'nullable', 'numeric', 'min:0'],
+            'buyingPrice' => ['nullable', 'numeric', 'min:0'],
             'sellingPrice' => ['required', 'numeric', 'min:0'],
             'reorderLevel' => ['required', 'numeric', 'min:0'],
         ]);
@@ -163,9 +163,12 @@ class Index extends Component
             'is_active' => $this->isActive,
         ];
 
-        if ($canSeeBuyingPrice) {
+        if ($canSeeBuyingPrice && $this->buyingPrice !== '') {
             $attributes['buying_price_cents'] = (int) round($data['buyingPrice'] * 100);
         } elseif (! $this->editingProductId) {
+            // Left blank on a new product (invoice cost not confirmed yet) —
+            // default to 0 rather than blocking creation; editing an existing
+            // product with the field left blank leaves its cost untouched.
             $attributes['buying_price_cents'] = 0;
         }
 

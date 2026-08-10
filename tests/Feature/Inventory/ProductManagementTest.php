@@ -108,6 +108,57 @@ class ProductManagementTest extends TestCase
         ]);
     }
 
+    public function test_manager_can_create_a_product_leaving_buying_price_blank(): void
+    {
+        // Cost isn't always known yet (invoice not confirmed) — creation
+        // shouldn't be blocked on it, it just defaults to 0 until set later.
+        $manager = User::factory()->manager()->create();
+
+        Livewire::actingAs($manager)
+            ->test(ProductsIndex::class)
+            ->set('name', 'Broiler Starter')
+            ->set('categoryId', $this->category->id)
+            ->set('baseUnit', 'kg')
+            ->set('buyingPrice', '')
+            ->set('sellingPrice', '72.00')
+            ->set('reorderLevel', '75')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('products', [
+            'name' => 'Broiler Starter',
+            'buying_price_cents' => 0,
+            'selling_price_cents' => 7200,
+        ]);
+    }
+
+    public function test_editing_a_product_leaving_buying_price_blank_does_not_reset_it(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $product = Product::create([
+            'category_id' => $this->category->id,
+            'name' => 'Dairy Meal',
+            'base_unit' => 'kg',
+            'buying_price_cents' => 5200,
+            'selling_price_cents' => 6500,
+            'reorder_level' => 10,
+        ]);
+
+        Livewire::actingAs($manager)
+            ->test(ProductsIndex::class)
+            ->call('startEdit', $product->id)
+            ->set('buyingPrice', '')
+            ->set('sellingPrice', '70.00')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'buying_price_cents' => 5200,
+            'selling_price_cents' => 7000,
+        ]);
+    }
+
     public function test_editing_a_product_price_is_audit_logged_as_price_changed(): void
     {
         $manager = User::factory()->manager()->create();
