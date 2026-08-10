@@ -1,4 +1,6 @@
 <div>
+    @php $alertCount = $expiredBatches->count() + $lowStockProducts->count() + $expiringSoonBatches->count(); @endphp
+
     <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
             <h1 class="text-2xl font-semibold text-text-primary">Welcome, {{ auth()->user()->name }}</h1>
@@ -10,6 +12,15 @@
                 @endcan
             </p>
         </div>
+        @if ($alertCount > 0)
+            <a
+                href="#inventory-alerts"
+                class="inline-flex items-center gap-1.5 rounded-full bg-danger-100 px-3 py-1.5 text-xs font-semibold text-danger-700 transition-colors hover:bg-danger-200"
+            >
+                <x-heroicon-o-exclamation-triangle class="h-3.5 w-3.5" />
+                {{ $alertCount }} {{ $alertCount === 1 ? 'alert' : 'alerts' }}
+            </a>
+        @endif
     </div>
 
     {{-- Stat cards --}}
@@ -126,7 +137,7 @@
 
     <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
         {{-- Inventory alerts --}}
-        <x-card class="xl:col-span-2" title="Inventory alerts">
+        <x-card id="inventory-alerts" class="scroll-mt-4 xl:col-span-2" title="Inventory alerts">
             <div class="space-y-4">
                 @if ($expiredBatches->isNotEmpty())
                     <div>
