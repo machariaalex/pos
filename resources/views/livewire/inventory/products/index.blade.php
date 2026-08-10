@@ -157,7 +157,7 @@
                     <div class="grid grid-cols-2 gap-4 rounded-lg border border-surface-border bg-surface-muted p-3">
                         <div>
                             <label class="mb-1 block text-sm font-medium text-text-secondary">Selling unit</label>
-                            <select wire:model="sellingUnit" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
+                            <select wire:model.live="sellingUnit" class="w-full rounded-lg border border-surface-border bg-surface-card px-3 py-2.5 text-sm focus:border-primary-600 focus:outline-none focus:ring-1 focus:ring-primary-600">
                                 <option value="">Select...</option>
                                 @foreach (\App\Models\Product::UNITS as $unit)
                                     <option value="{{ $unit }}">{{ $unit }}</option>
