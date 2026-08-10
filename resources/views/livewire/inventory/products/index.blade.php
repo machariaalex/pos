@@ -15,6 +15,20 @@
         @endcan
     </div>
 
+    @if ($lastCreatedProduct)
+        <x-alert-row variant="success" icon="check-circle" class="mb-4">
+            <p class="text-sm font-medium text-text-primary">"{{ $lastCreatedProduct->name }}" created.</p>
+            <p class="text-xs text-text-secondary">It has no stock yet — receive some now, or do it later from this list.</p>
+            @can('adjust-stock')
+                <x-slot:action>
+                    <x-button :href="route('inventory.receive-stock', ['product' => $lastCreatedProduct->id])" variant="primary" size="sm">
+                        Receive stock
+                    </x-button>
+                </x-slot:action>
+            @endcan
+        </x-alert-row>
+    @endif
+
     <div class="mb-4 flex flex-wrap items-center gap-3">
         <div class="relative">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
@@ -79,9 +93,14 @@
                     @endcan
                     <td class="font-tabular px-4 py-3 text-text-secondary">KES {{ number_format($product->selling_price_cents / 100, 2) }}</td>
                     <td class="px-4 py-3 text-right">
-                        @can('edit-price')
-                            <button wire:click="startEdit({{ $product->id }})" class="text-sm font-medium text-primary-700 hover:underline">Edit</button>
-                        @endcan
+                        <div class="flex items-center justify-end gap-3">
+                            @can('adjust-stock')
+                                <a href="{{ route('inventory.receive-stock', ['product' => $product->id]) }}" class="text-sm font-medium text-primary-700 hover:underline">Receive stock</a>
+                            @endcan
+                            @can('edit-price')
+                                <button wire:click="startEdit({{ $product->id }})" class="text-sm font-medium text-primary-700 hover:underline">Edit</button>
+                            @endcan
+                        </div>
                     </td>
                 </tr>
             @empty

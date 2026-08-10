@@ -159,6 +159,76 @@ class ProductManagementTest extends TestCase
         ]);
     }
 
+    public function test_creating_a_product_shows_a_receive_stock_prompt(): void
+    {
+        $manager = User::factory()->manager()->create();
+
+        Livewire::actingAs($manager)
+            ->test(ProductsIndex::class)
+            ->set('name', 'Broiler Starter')
+            ->set('categoryId', $this->category->id)
+            ->set('baseUnit', 'kg')
+            ->set('sellingPrice', '72.00')
+            ->set('reorderLevel', '75')
+            ->call('save')
+            ->assertSee('Broiler Starter')
+            ->assertSee('has no stock yet')
+            ->assertSeeHtml(route('inventory.receive-stock'));
+    }
+
+    public function test_receive_stock_prompt_clears_when_starting_another_create(): void
+    {
+        $manager = User::factory()->manager()->create();
+
+        $component = Livewire::actingAs($manager)
+            ->test(ProductsIndex::class)
+            ->set('name', 'Broiler Starter')
+            ->set('categoryId', $this->category->id)
+            ->set('baseUnit', 'kg')
+            ->set('sellingPrice', '72.00')
+            ->set('reorderLevel', '75')
+            ->call('save');
+
+        $product = Product::where('name', 'Broiler Starter')->firstOrFail();
+        $component->assertSet('lastCreatedProductId', $product->id);
+
+        $component->call('startCreate')->assertSet('lastCreatedProductId', null);
+    }
+
+    public function test_products_list_has_a_receive_stock_link_for_managers(): void
+    {
+        $manager = User::factory()->manager()->create();
+        $product = Product::create([
+            'category_id' => $this->category->id,
+            'name' => 'Dairy Meal',
+            'base_unit' => 'kg',
+            'buying_price_cents' => 5200,
+            'selling_price_cents' => 6500,
+            'reorder_level' => 10,
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('inventory.products.index'))
+            ->assertSeeHtml(route('inventory.receive-stock', ['product' => $product->id]));
+    }
+
+    public function test_products_list_has_no_receive_stock_link_for_attendants(): void
+    {
+        $attendant = User::factory()->attendant()->create();
+        $product = Product::create([
+            'category_id' => $this->category->id,
+            'name' => 'Dairy Meal',
+            'base_unit' => 'kg',
+            'buying_price_cents' => 5200,
+            'selling_price_cents' => 6500,
+            'reorder_level' => 10,
+        ]);
+
+        $this->actingAs($attendant)
+            ->get(route('inventory.products.index'))
+            ->assertDontSeeHtml(route('inventory.receive-stock', ['product' => $product->id]));
+    }
+
     public function test_editing_a_product_price_is_audit_logged_as_price_changed(): void
     {
         $manager = User::factory()->manager()->create();

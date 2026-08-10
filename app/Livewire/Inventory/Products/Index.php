@@ -58,6 +58,8 @@ class Index extends Component
 
     public string $newCategoryName = '';
 
+    public ?int $lastCreatedProductId = null;
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -80,7 +82,7 @@ class Index extends Component
         $this->reset([
             'editingProductId', 'name', 'categoryId', 'barcode', 'buyingPrice', 'sellingPrice', 'reorderLevel',
             'showCategoryForm', 'newCategoryName', 'hasSellingUnit', 'sellingUnit', 'unitsPerBase',
-            'hasBulkPack', 'packSize', 'packPrice',
+            'hasBulkPack', 'packSize', 'packPrice', 'lastCreatedProductId',
         ]);
         $this->baseUnit = Product::UNIT_KG;
         $this->unitsPerBase = '1';
@@ -110,6 +112,7 @@ class Index extends Component
         $this->isActive = $product->is_active;
         $this->showCategoryForm = false;
         $this->newCategoryName = '';
+        $this->lastCreatedProductId = null;
         $this->showForm = true;
     }
 
@@ -190,6 +193,7 @@ class Index extends Component
         } else {
             $product = Product::create($attributes);
             AuditLog::record('product.created', $product, "Created product {$product->name}");
+            $this->lastCreatedProductId = $product->id;
         }
 
         $this->showForm = false;
@@ -213,6 +217,7 @@ class Index extends Component
         return view('livewire.inventory.products.index', [
             'products' => $products,
             'categories' => Category::orderBy('name')->get(),
+            'lastCreatedProduct' => $this->lastCreatedProductId ? Product::find($this->lastCreatedProductId) : null,
         ]);
     }
 }
