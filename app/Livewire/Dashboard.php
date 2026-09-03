@@ -54,6 +54,11 @@ class Dashboard extends Component
             ->orderBy('expiry_date')
             ->get();
 
+        // Computed once and reused for both the hero card's sparkline and
+        // the main chart when it's already showing the week view, rather
+        // than running the same 7-day summary loop twice per request.
+        $weekSeries = $this->last7Days($summaryScope);
+
         return view('livewire.dashboard', [
             'summary' => $summary,
             'salesDelta' => $this->percentDelta($summary['net_revenue_cents'], $yesterday['net_revenue_cents']),
@@ -62,7 +67,8 @@ class Dashboard extends Component
             'expiredBatches' => $expiredBatches,
             'expiringSoonBatches' => $expiringSoonBatches,
             'outstandingDebtCents' => Customer::where('balance_cents', '>', 0)->sum('balance_cents'),
-            'chartData' => $this->chartRange === 'today' ? $this->todayByHour($summaryScope) : $this->last7Days($summaryScope),
+            'chartData' => $this->chartRange === 'today' ? $this->todayByHour($summaryScope) : $weekSeries,
+            'heroSparkline' => $weekSeries['values'],
             'topProducts' => $this->topProductsThisWeek(),
             'recentSales' => $this->recentSales($summaryScope),
         ]);

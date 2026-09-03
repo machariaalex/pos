@@ -1,14 +1,15 @@
 <div>
     @php $alertCount = $expiredBatches->count() + $lowStockProducts->count() + $expiringSoonBatches->count(); @endphp
 
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
             <h1 class="text-2xl font-semibold text-text-primary">Welcome, {{ auth()->user()->name }}</h1>
             <p class="mt-1 text-sm text-text-secondary">
+                {{ now()->timezone('Africa/Nairobi')->translatedFormat('l, j F Y') }} &middot;
                 @can('view-reports')
-                    Shop-wide summary for today.
+                    shop-wide summary for today.
                 @else
-                    Your sales summary for today.
+                    your sales summary for today.
                 @endcan
             </p>
         </div>
@@ -23,74 +24,65 @@
         @endif
     </div>
 
-    {{-- Stat cards --}}
-    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <x-stat-card
+    {{-- Hero: today's headline number --}}
+    <div class="mb-4">
+        <x-stat-card-hero
             icon="banknotes"
-            variant="primary"
             label="Sales today"
             value="KES {{ number_format($summary['net_revenue_cents'] / 100, 2) }}"
             :delta="$salesDelta"
+            :sparkline="$heroSparkline"
         />
-        <x-stat-card
-            icon="receipt-percent"
-            variant="info"
+    </div>
+
+    {{-- Secondary stats — compact tiles, dense grid even on mobile --}}
+    <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <x-stat-tile
             label="Transactions"
             value="{{ $summary['transaction_count'] }}"
             :delta="$transactionsDelta"
         />
-        <x-stat-card
-            icon="banknotes"
-            variant="success"
+        <x-stat-tile
             label="Cash"
             value="KES {{ number_format($summary['by_payment_method']['cash'] / 100, 2) }}"
         />
-        <x-stat-card
-            icon="device-phone-mobile"
-            variant="success"
+        <x-stat-tile
             label="M-Pesa"
             value="KES {{ number_format($summary['by_payment_method']['mpesa'] / 100, 2) }}"
         />
-        <x-stat-card
-            icon="clock"
-            variant="warn"
+        <x-stat-tile
             label="Credit"
             value="KES {{ number_format($summary['by_payment_method']['credit'] / 100, 2) }}"
         />
-        <x-stat-card
-            icon="receipt-percent"
-            variant="{{ $summary['discount_cents'] > 0 ? 'warn' : 'primary' }}"
-            label="Discounts today"
+        <x-stat-tile
+            label="Discounts"
+            variant="{{ $summary['discount_cents'] > 0 ? 'warn' : 'default' }}"
             value="KES {{ number_format($summary['discount_cents'] / 100, 2) }}"
         />
         @can('view-reports')
-            <x-stat-card
-                icon="exclamation-circle"
+            <x-stat-tile
+                label="Debtors"
                 variant="{{ $outstandingDebtCents > 0 ? 'danger' : 'success' }}"
-                label="Outstanding debtors"
                 value="KES {{ number_format($outstandingDebtCents / 100, 2) }}"
             />
         @endcan
     </div>
 
     @can('view-profit')
-        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <x-stat-card
-                icon="chart-pie"
-                variant="{{ $summary['profit_cents'] >= 0 ? 'success' : 'danger' }}"
+        <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <x-stat-tile
                 label="Gross profit today"
+                variant="{{ $summary['profit_cents'] >= 0 ? 'success' : 'danger' }}"
                 value="KES {{ number_format($summary['profit_cents'] / 100, 2) }}"
             />
-            <x-stat-card
-                icon="arrow-trending-down"
-                variant="{{ $summary['expenses_cents'] > 0 ? 'warn' : 'primary' }}"
+            <x-stat-tile
                 label="Expenses today"
+                variant="{{ $summary['expenses_cents'] > 0 ? 'warn' : 'default' }}"
                 value="KES {{ number_format($summary['expenses_cents'] / 100, 2) }}"
             />
-            <x-stat-card
-                icon="banknotes"
-                variant="{{ $summary['net_profit_cents'] >= 0 ? 'success' : 'danger' }}"
+            <x-stat-tile
                 label="Net profit today"
+                variant="{{ $summary['net_profit_cents'] >= 0 ? 'success' : 'danger' }}"
                 value="KES {{ number_format($summary['net_profit_cents'] / 100, 2) }}"
             />
         </div>
@@ -155,7 +147,7 @@
                         <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Expired</p>
                         <div class="space-y-1.5">
                             @foreach ($expiredBatches as $batch)
-                                <x-alert-row variant="danger" icon="x-circle">
+                                <x-alert-row variant="danger" icon="x-circle" class="border-l-2 border-danger-600">
                                     <p class="truncate text-sm font-medium text-text-primary">{{ $batch->product->name }}</p>
                                     <p class="text-xs text-text-secondary">Batch {{ $batch->batch_number }} &middot; expired {{ $batch->expiry_date->toDateString() }} &middot; {{ $batch->quantity_remaining }} {{ $batch->product->base_unit }} left</p>
                                     <x-slot:action>
@@ -172,7 +164,7 @@
                         <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Low stock</p>
                         <div class="space-y-1.5">
                             @foreach ($lowStockProducts as $product)
-                                <x-alert-row variant="danger" icon="arrow-trending-down">
+                                <x-alert-row variant="danger" icon="arrow-trending-down" class="border-l-2 border-danger-600">
                                     <p class="truncate text-sm font-medium text-text-primary">{{ $product->name }}</p>
                                     <p class="text-xs text-text-secondary">{{ $product->stockOnHand() }} {{ $product->base_unit }} left &middot; reorder at {{ $product->reorder_level }}</p>
                                     <x-slot:action>
@@ -189,7 +181,7 @@
                         <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Expiring within 60 days</p>
                         <div class="space-y-1.5">
                             @foreach ($expiringSoonBatches as $batch)
-                                <x-alert-row variant="danger" icon="clock">
+                                <x-alert-row variant="danger" icon="clock" class="border-l-2 border-danger-600">
                                     <p class="truncate text-sm font-medium text-text-primary">{{ $batch->product->name }}</p>
                                     <p class="text-xs text-text-secondary">Batch {{ $batch->batch_number }} &middot; expires {{ $batch->expiry_date->toDateString() }} &middot; {{ $batch->quantity_remaining }} {{ $batch->product->base_unit }} left</p>
                                     <x-slot:action>

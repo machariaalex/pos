@@ -93,10 +93,40 @@
             <span class="truncate text-sm font-semibold text-text-primary">Waingo Farm</span>
         </div>
 
-        <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 print:max-w-none print:p-0">
+        <main class="mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-6 print:max-w-none print:p-0">
             {{ $slot }}
         </main>
     </div>
+
+    {{-- Mobile bottom tab bar: the app's most-reached-for destinations one
+         tap away, without opening the drawer. "More" opens the same
+         drawer as the top bar's hamburger for everything else. --}}
+    <nav
+        class="fixed inset-x-0 bottom-0 z-20 flex items-stretch border-t border-surface-border bg-surface-card/95 backdrop-blur-sm lg:hidden print:hidden"
+        style="padding-bottom: env(safe-area-inset-bottom)"
+    >
+        <a href="{{ route('dashboard') }}" @class(['flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-xs font-medium transition-colors', 'text-primary-700' => request()->routeIs('dashboard'), 'text-text-muted' => ! request()->routeIs('dashboard')])>
+            <x-heroicon-o-home class="h-5 w-5" />
+            Dashboard
+        </a>
+
+        <a href="{{ route('sales.pos') }}" class="flex flex-1 flex-col items-center justify-center gap-1 py-1.5">
+            <span @class(['flex h-11 w-11 items-center justify-center rounded-full shadow-md shadow-primary-950/30 transition-transform active:scale-95', 'bg-primary-600' => request()->routeIs('sales.pos'), 'bg-primary-800' => ! request()->routeIs('sales.pos')])>
+                <x-heroicon-o-shopping-cart class="h-5 w-5 text-white" />
+            </span>
+            <span @class(['text-xs font-medium transition-colors', 'text-primary-700' => request()->routeIs('sales.pos'), 'text-text-muted' => ! request()->routeIs('sales.pos')])>Sell</span>
+        </a>
+
+        <a href="{{ route('inventory.products.index') }}" @class(['flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-xs font-medium transition-colors', 'text-primary-700' => request()->routeIs('inventory.products.*'), 'text-text-muted' => ! request()->routeIs('inventory.products.*')])>
+            <x-heroicon-o-cube class="h-5 w-5" />
+            Products
+        </a>
+
+        <button type="button" @click="sidebarOpen = true" class="flex flex-1 flex-col items-center justify-center gap-0.5 py-2.5 text-xs font-medium text-text-muted transition-colors">
+            <x-heroicon-o-bars-3 class="h-5 w-5" />
+            More
+        </button>
+    </nav>
 
     @livewireScripts
 </body>
