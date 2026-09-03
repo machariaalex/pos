@@ -2,10 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Actions\Inventory\GetInventoryAlerts;
 use App\Actions\Reports\ComputeDailySummary;
-use App\Models\Batch;
 use App\Models\Customer;
-use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleLine;
 use App\Models\User;
@@ -33,26 +32,7 @@ class Dashboard extends Component
         $summary = $summaryAction(Carbon::today(), $summaryScope);
         $yesterday = $summaryAction(Carbon::yesterday(), $summaryScope);
 
-        $lowStockProducts = Product::with('category')
-            ->whereRaw(
-                '(select coalesce(sum(quantity_remaining), 0) from batches where batches.product_id = products.id) <= products.reorder_level'
-            )
-            ->orderBy('name')
-            ->get();
-
-        $expiredBatches = Batch::with('product')
-            ->where('quantity_remaining', '>', 0)
-            ->whereNotNull('expiry_date')
-            ->where('expiry_date', '<', Carbon::today())
-            ->orderBy('expiry_date')
-            ->get();
-
-        $expiringSoonBatches = Batch::with('product')
-            ->where('quantity_remaining', '>', 0)
-            ->whereNotNull('expiry_date')
-            ->whereBetween('expiry_date', [Carbon::today(), Carbon::today()->addDays(60)])
-            ->orderBy('expiry_date')
-            ->get();
+        $alerts = (new GetInventoryAlerts)();
 
         // Computed once and reused for both the hero card's sparkline and
         // the main chart when it's already showing the week view, rather
@@ -63,14 +43,14 @@ class Dashboard extends Component
             'summary' => $summary,
             'salesDelta' => $this->percentDelta($summary['net_revenue_cents'], $yesterday['net_revenue_cents']),
             'transactionsDelta' => $this->percentDelta($summary['transaction_count'], $yesterday['transaction_count']),
-            'lowStockProducts' => $lowStockProducts,
-            'expiredBatches' => $expiredBatches,
-            'expiringSoonBatches' => $expiringSoonBatches,
+            'lowStockProducts' => $alerts['lowStockProducts'],
+            'expiredBatches' => $alerts['expiredBatches'],
+            'expiringSoonBatches' => $alerts['expiringSoonBatches'],
             'outstandingDebtCents' => Customer::where('balance_cents', '>', 0)->sum('balance_cents'),
             'chartData' => $this->chartRange === 'today' ? $this->todayByHour($summaryScope) : $weekSeries,
             'heroSparkline' => $weekSeries['values'],
             'topProducts' => $this->topProductsThisWeek(),
-            'recentSales' => $this->recentSales($summaryScope),
+            'todaysSales' => $this->todaysSales($summaryScope),
         ]);
     }
 
@@ -143,13 +123,19 @@ class Dashboard extends Component
             ]);
     }
 
-    private function recentSales(?User $scope)
+    /**
+     * Today's completed sales with their line items eager-loaded, so the
+     * dashboard can show what was actually sold — not just the total —
+     * without an N+1 query per row.
+     */
+    private function todaysSales(?User $scope)
     {
         return Sale::where('status', Sale::STATUS_COMPLETED)
+            ->whereDate('completed_at', Carbon::today())
             ->when($scope, fn ($q) => $q->where('user_id', $scope->id))
-            ->with(['customer', 'payments'])
+            ->with(['customer', 'payments', 'lines.product'])
             ->latest('completed_at')
-            ->limit(6)
+            ->limit(10)
             ->get();
     }
 }

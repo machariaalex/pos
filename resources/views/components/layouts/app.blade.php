@@ -90,7 +90,10 @@
                 <x-heroicon-o-bars-3 class="h-6 w-6" />
             </button>
             <img src="{{ asset('images/waingo.png') }}" alt="" class="h-7 w-7 rounded-full object-cover">
-            <span class="truncate text-sm font-semibold text-text-primary">Waingo Farm</span>
+            <span class="min-w-0 flex-1 truncate text-sm font-semibold text-text-primary">Waingo Farm</span>
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-bold text-primary-700" title="{{ auth()->user()->name }}">
+                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+            </span>
         </div>
 
         <main class="mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-6 print:max-w-none print:p-0">

@@ -10,6 +10,7 @@ use App\Livewire\Customers\Show as CustomerShow;
 use App\Livewire\Dashboard;
 use App\Livewire\Expenses\Categories\Index as ExpenseCategoriesIndex;
 use App\Livewire\Expenses\Index as ExpensesIndex;
+use App\Livewire\Inventory\Alerts\Index as InventoryAlertsIndex;
 use App\Livewire\Inventory\Categories\Index as CategoriesIndex;
 use App\Livewire\Inventory\Products\Index as ProductsIndex;
 use App\Livewire\Inventory\Products\Show as ProductShow;
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/users', UsersIndex::class)->name('users.index');
 
     Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/alerts', InventoryAlertsIndex::class)->name('alerts');
         Route::get('/products', ProductsIndex::class)->name('products.index');
         Route::get('/products/{product}', ProductShow::class)->name('products.show');
         Route::get('/categories', CategoriesIndex::class)->name('categories.index');

@@ -82,13 +82,23 @@ function destroyOnRemoval(el, chart) {
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('barChart', (data, color = '#2d7a48') => ({
         init() {
+            const ctx = this.$refs.canvas.getContext('2d');
+            // A subtle top-to-bottom fade on each bar — options.scales
+            // aren't known yet at chart-construction time, so this uses a
+            // fixed height rather than reading the eventual chart area;
+            // close enough for a decorative gradient at this chart size.
+            const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, `${color}55`);
+
             const chart = new window.Chart(this.$refs.canvas, {
                 type: 'bar',
                 data: {
                     labels: data.labels,
                     datasets: [{
                         data: data.values,
-                        backgroundColor: color,
+                        backgroundColor: gradient,
+                        hoverBackgroundColor: color,
                         borderRadius: 4,
                         maxBarThickness: 36,
                     }],

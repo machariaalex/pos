@@ -1,9 +1,18 @@
 <div>
-    @php $alertCount = $expiredBatches->count() + $lowStockProducts->count() + $expiringSoonBatches->count(); @endphp
+    @php
+        $alertCount = $expiredBatches->count() + $lowStockProducts->count() + $expiringSoonBatches->count();
+        $nairobiHour = now()->timezone('Africa/Nairobi')->hour;
+        $greeting = match (true) {
+            $nairobiHour < 12 => 'Good morning',
+            $nairobiHour < 17 => 'Good afternoon',
+            default => 'Good evening',
+        };
+        $firstName = explode(' ', auth()->user()->name)[0];
+    @endphp
 
-    <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div class="mb-5 flex flex-wrap items-end justify-between gap-3 animate-rise">
         <div>
-            <h1 class="text-2xl font-semibold text-text-primary">Welcome, {{ auth()->user()->name }}</h1>
+            <h1 class="text-2xl font-semibold text-text-primary">{{ $greeting }}, {{ $firstName }}</h1>
             <p class="mt-1 text-sm text-text-secondary">
                 {{ now()->timezone('Africa/Nairobi')->translatedFormat('l, j F Y') }} &middot;
                 @can('view-reports')
@@ -14,9 +23,17 @@
             </p>
         </div>
         @if ($alertCount > 0)
+            {{-- Mobile: alerts live on their own page. Desktop: scroll to the inline card below. --}}
+            <a
+                href="{{ route('inventory.alerts') }}"
+                class="inline-flex items-center gap-1.5 rounded-full bg-danger-100 px-3 py-1.5 text-xs font-semibold text-danger-700 transition-colors hover:bg-danger-200 lg:hidden"
+            >
+                <x-heroicon-o-exclamation-triangle class="h-3.5 w-3.5" />
+                {{ $alertCount }} {{ $alertCount === 1 ? 'alert' : 'alerts' }}
+            </a>
             <a
                 href="#inventory-alerts"
-                class="inline-flex items-center gap-1.5 rounded-full bg-danger-100 px-3 py-1.5 text-xs font-semibold text-danger-700 transition-colors hover:bg-danger-200"
+                class="hidden items-center gap-1.5 rounded-full bg-danger-100 px-3 py-1.5 text-xs font-semibold text-danger-700 transition-colors hover:bg-danger-200 lg:inline-flex"
             >
                 <x-heroicon-o-exclamation-triangle class="h-3.5 w-3.5" />
                 {{ $alertCount }} {{ $alertCount === 1 ? 'alert' : 'alerts' }}
@@ -25,7 +42,7 @@
     </div>
 
     {{-- Hero: today's headline number --}}
-    <div class="mb-4">
+    <div class="mb-4 animate-rise" style="animation-delay: 60ms">
         <x-stat-card-hero
             icon="banknotes"
             label="Sales today"
@@ -36,7 +53,7 @@
     </div>
 
     {{-- Secondary stats — compact tiles, dense grid even on mobile --}}
-    <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div class="mb-4 grid grid-cols-2 gap-3 animate-rise sm:grid-cols-3 lg:grid-cols-6" style="animation-delay: 110ms">
         <x-stat-tile
             label="Transactions"
             value="{{ $summary['transaction_count'] }}"
@@ -69,7 +86,7 @@
     </div>
 
     @can('view-profit')
-        <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div class="mb-6 grid grid-cols-1 gap-3 animate-rise sm:grid-cols-3" style="animation-delay: 150ms">
             <x-stat-tile
                 label="Gross profit today"
                 variant="{{ $summary['profit_cents'] >= 0 ? 'success' : 'danger' }}"
@@ -88,7 +105,18 @@
         </div>
     @endcan
 
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+    @php
+        $paymentMixTotal = array_sum($summary['by_payment_method']);
+        $paymentMixLabels = ['Cash', 'M-Pesa', 'Credit'];
+        $paymentMixValues = [
+            $summary['by_payment_method']['cash'] / 100,
+            $summary['by_payment_method']['mpesa'] / 100,
+            $summary['by_payment_method']['credit'] / 100,
+        ];
+        $paymentMixColors = ['#2d7a48', '#2563eb', '#d97706'];
+    @endphp
+
+    <div class="grid grid-cols-1 gap-6 animate-rise xl:grid-cols-4" style="animation-delay: 190ms">
         {{-- Sales overview chart --}}
         <x-card class="xl:col-span-2" title="Sales overview">
             <x-slot:actions>
@@ -118,18 +146,49 @@
             </div>
         </x-card>
 
-        {{-- Top products this week --}}
-        <x-card title="Top products this week">
-            <div class="-my-2 divide-y divide-surface-border">
-                @forelse ($topProducts as $product)
-                    <div class="flex items-center justify-between py-2.5 text-sm">
-                        <div class="min-w-0">
-                            <p class="truncate font-medium text-text-primary">{{ $product->name }}</p>
-                            <p class="text-xs text-text-muted">{{ $product->total_quantity }} {{ $product->base_unit }} sold</p>
+        {{-- Payment mix today --}}
+        <x-card title="Payment mix today">
+            @if ($paymentMixTotal > 0)
+                <div wire:ignore x-data="doughnutChart(@js(['labels' => $paymentMixLabels, 'values' => $paymentMixValues]), @js($paymentMixColors))" wire:key="payment-mix-{{ $summary['date'] }}" class="h-36">
+                    <canvas x-ref="canvas"></canvas>
+                </div>
+                <div class="mt-3 space-y-1.5">
+                    @foreach ($paymentMixLabels as $i => $label)
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="flex items-center gap-1.5 text-text-secondary">
+                                <span class="h-2 w-2 rounded-full" style="background: {{ $paymentMixColors[$i] }}"></span>
+                                {{ $label }}
+                            </span>
+                            <span class="font-tabular font-medium text-text-primary">{{ number_format($paymentMixValues[$i], 0) }}</span>
                         </div>
-                        <p class="font-tabular shrink-0 font-medium text-text-primary">
-                            KES {{ number_format($product->total_cents / 100, 0) }}
-                        </p>
+                    @endforeach
+                </div>
+            @else
+                <x-empty-state icon="chart-pie" title="No payments yet today" class="py-6" />
+            @endif
+        </x-card>
+
+        {{-- Top products this week --}}
+        <x-card class="xl:col-span-1" title="Top products this week">
+            @php $topProductsMax = $topProducts->max('total_cents') ?: 1; @endphp
+            <div class="space-y-3">
+                @forelse ($topProducts as $i => $product)
+                    <div>
+                        <div class="flex items-center justify-between gap-2 text-sm">
+                            <div class="flex min-w-0 items-center gap-2">
+                                <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-100 text-[0.65rem] font-bold text-primary-700">{{ $i + 1 }}</span>
+                                <div class="min-w-0">
+                                    <p class="truncate font-medium text-text-primary">{{ $product->name }}</p>
+                                    <p class="text-xs text-text-muted">{{ $product->total_quantity }} {{ $product->base_unit }} sold</p>
+                                </div>
+                            </div>
+                            <p class="font-tabular shrink-0 font-medium text-text-primary">
+                                KES {{ number_format($product->total_cents / 100, 0) }}
+                            </p>
+                        </div>
+                        <div class="mt-1.5 ml-7 h-1 rounded-full bg-surface-muted">
+                            <div class="h-1 rounded-full bg-primary-500" style="width: {{ round($product->total_cents / $topProductsMax * 100) }}%"></div>
+                        </div>
                     </div>
                 @empty
                     <x-empty-state icon="chart-bar" title="No sales yet this week" class="py-6" />
@@ -138,9 +197,39 @@
         </x-card>
     </div>
 
-    <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {{-- Inventory alerts --}}
-        <x-card id="inventory-alerts" class="scroll-mt-4 xl:col-span-2" title="Inventory alerts">
+    <div class="mt-6 grid grid-cols-1 gap-6 animate-rise xl:grid-cols-3" style="animation-delay: 230ms">
+        {{-- Inventory alerts: full detail inline on desktop; a compact
+             summary linking to its own page on mobile (see the top-of-page
+             alert badge too) — the same content either way, just where it
+             lives differs by screen size. --}}
+        @if ($alertCount > 0)
+            <a href="{{ route('inventory.alerts') }}" class="block rounded-card border border-surface-border bg-surface-card p-4 shadow-sm lg:hidden">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger-100 text-danger-600">
+                            <x-heroicon-o-exclamation-triangle class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-text-primary">Inventory alerts</p>
+                            <p class="text-xs text-text-muted">{{ $alertCount }} {{ $alertCount === 1 ? 'item needs' : 'items need' }} attention</p>
+                        </div>
+                    </div>
+                    <x-heroicon-o-chevron-right class="h-5 w-5 shrink-0 text-text-muted" />
+                </div>
+            </a>
+        @else
+            <div class="flex items-center gap-3 rounded-card border border-surface-border bg-surface-card p-4 shadow-sm lg:hidden">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-100 text-success-600">
+                    <x-heroicon-o-check-circle class="h-5 w-5" />
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-text-primary">Inventory alerts</p>
+                    <p class="text-xs text-text-muted">All clear</p>
+                </div>
+            </div>
+        @endif
+
+        <x-card id="inventory-alerts" class="hidden scroll-mt-4 lg:block xl:col-span-2" title="Inventory alerts">
             <div class="space-y-4">
                 @if ($expiredBatches->isNotEmpty())
                     <div>
@@ -199,27 +288,32 @@
             </div>
         </x-card>
 
-        {{-- Recent transactions --}}
-        <x-card title="Recent transactions">
+        {{-- Today's sales — what was actually sold, not just the total --}}
+        <x-card title="Today's sales">
             <div class="-my-2 divide-y divide-surface-border">
-                @forelse ($recentSales as $sale)
+                @forelse ($todaysSales as $sale)
+                    @php
+                        $primaryMethod = $sale->payments->first()?->method ?? 'cash';
+                        [$methodIcon, $methodTint] = match ($primaryMethod) {
+                            'mpesa' => ['device-phone-mobile', 'bg-info-100 text-info-600'],
+                            'credit' => ['clock', 'bg-warn-100 text-warn-600'],
+                            default => ['banknotes', 'bg-success-100 text-success-600'],
+                        };
+                        $itemsSummary = $sale->lines
+                            ->map(fn ($line) => "{$line->quantity} {$line->product->base_unit} {$line->product->name}")
+                            ->implode(', ');
+                    @endphp
                     <a href="{{ route('sales.receipt', $sale) }}" class="flex items-center gap-3 py-2.5 text-sm hover:bg-surface-muted">
-                        @php
-                            $primaryMethod = $sale->payments->first()?->method ?? 'cash';
-                            $methodIcon = match ($primaryMethod) {
-                                'mpesa' => 'device-phone-mobile',
-                                'credit' => 'clock',
-                                default => 'banknotes',
-                            };
-                        @endphp
-                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-secondary">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full {{ $methodTint }}">
                             <x-dynamic-component :component="'heroicon-o-'.$methodIcon" class="h-4 w-4" />
                         </div>
                         <div class="min-w-0 flex-1">
-                            <p class="truncate font-medium text-text-primary">{{ $sale->customer?->name ?? 'Walk-in' }}</p>
-                            <p class="text-xs text-text-muted">{{ $sale->completed_at->format('H:i') }}</p>
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="truncate font-medium text-text-primary">{{ $sale->customer?->name ?? 'Walk-in' }}</p>
+                                <p class="font-tabular shrink-0 font-medium text-text-primary">KES {{ number_format($sale->total_cents / 100, 0) }}</p>
+                            </div>
+                            <p class="truncate text-xs text-text-muted">{{ $itemsSummary }} &middot; {{ $sale->completed_at->format('H:i') }}</p>
                         </div>
-                        <p class="font-tabular shrink-0 font-medium text-text-primary">KES {{ number_format($sale->total_cents / 100, 0) }}</p>
                     </a>
                 @empty
                     <x-empty-state icon="receipt-percent" title="No sales yet today" class="py-6" />
